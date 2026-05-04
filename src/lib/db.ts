@@ -59,6 +59,15 @@ export interface StudySessionRecord {
   quizzesTaken?: number
 }
 
+export interface WeakAreaRecord {
+  id?: number
+  courseId: number
+  topic: string
+  wrongCount: number
+  totalAttempts: number
+  lastUpdated: string
+}
+
 class ExamHelperDB extends Dexie {
   courses!: Table<CourseRecord, number>
   documents!: Table<DocumentRecord, number>
@@ -66,6 +75,7 @@ class ExamHelperDB extends Dexie {
   flashcards!: Table<FlashcardRecord, number>
   quizAttempts!: Table<QuizAttemptRecord, number>
   studySessions!: Table<StudySessionRecord, number>
+  weakAreas!: Table<WeakAreaRecord, number>
 
   constructor() {
     super('ExamHelperDB')
@@ -87,6 +97,17 @@ class ExamHelperDB extends Dexie {
       flashcards: '++id, materialId, front, back, difficulty, nextReview, repetitions, easeFactor',
       quizAttempts: '++id, materialId, score, answers, attemptedAt',
       studySessions: '++id, date, duration, cardsReviewed, quizzesTaken',
+    })
+
+    // v3: adds weakAreas table for tracking per-topic quiz performance
+    this.version(3).stores({
+      courses: '++id, courseCode, courseName, semester, createdAt',
+      documents: '++id, courseId, filename, fileType, extractedText, sections, status, uploadedAt',
+      materials: '++id, documentId, type, content, generatedAt',
+      flashcards: '++id, materialId, front, back, difficulty, nextReview, repetitions, easeFactor',
+      quizAttempts: '++id, materialId, score, answers, attemptedAt',
+      studySessions: '++id, date, duration, cardsReviewed, quizzesTaken',
+      weakAreas: '++id, courseId, topic, wrongCount, totalAttempts, lastUpdated',
     })
   }
 }

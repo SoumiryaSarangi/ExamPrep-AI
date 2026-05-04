@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useMaterialStore } from '@/stores/materialStore'
+import { useAuthStore } from '@/stores/authStore'
 import { generateSectionNotes } from '@/lib/ai/aiService'
 import ReactMarkdown from 'react-markdown'
 import { Card, CardContent } from '@/components/ui/card'
@@ -21,6 +22,8 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import type { Section } from '@/lib/parsers/textSplitter'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 // ─────────────────────────────────────────────
 // Types
@@ -42,15 +45,21 @@ export default function Notes() {
   const materialId = Number(params?.materialId || 0)
   const router = useRouter()
   const { currentMaterial, getMaterial, updateMaterial } = useMaterialStore()
+  const { user } = useAuthStore()
   const { toast } = useToast()
 
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
   const [generatedSections, setGeneratedSections] = useState<Record<number, string>>({})
   const [generating, setGenerating] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   // Prevent double-triggering generation on strict-mode double-mount
   const generatingRef = useRef(false)
+  // Track which section indexes are currently in-flight — avoids stale-closure race
+  const inFlightRef   = useRef<Set<number>>(new Set())
+  // Guard so the auto-generate on first load only fires once
+  const autoStartedRef = useRef(false)
 
   // ── Load material ───────────────────────────
   useEffect(() => {
@@ -67,13 +76,19 @@ export default function Notes() {
     }
   }, [currentMaterial])
 
-  // ── Auto-generate first section on load ────
+  // ── Auto-generate first section on load — fires ONCE only ──
   useEffect(() => {
     if (!currentMaterial) return
+    if (autoStartedRef.current) return   // already kicked off — do not re-run
     const content = currentMaterial.content as SectionedNotesContent
     if (!content?.sections?.length) return
-    if (generatedSections[0] === undefined && !generatingRef.current) {
+
+    // Only auto-start if section 0 has never been generated
+    if (content.generatedSections?.[0] === undefined) {
+      autoStartedRef.current = true
       generateForSection(0, content)
+    } else {
+      autoStartedRef.current = true   // already cached, mark as done
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentMaterial])
@@ -87,10 +102,27 @@ export default function Notes() {
       if (!material) return
       const c = content ?? (material.content as SectionedNotesContent)
       if (!c?.sections?.length) return
-      if (generatingRef.current) return // already running
-      if (generatedSections[index] !== undefined) return // already cached
+
+      // Strict single-section guards — no parallel generation allowed
+      if (generatingRef.current) {
+        console.log(`[Notes] Skipping section ${index + 1} — another section is already generating`)
+        return
+      }
+      if (inFlightRef.current.has(index)) {
+        console.log(`[Notes] Skipping section ${index + 1} — already in-flight`)
+        return
+      }
+      // Use the persisted generatedSections from the DB content, not the potentially stale local state
+      const persistedSections = (material.content as SectionedNotesContent).generatedSections ?? {}
+      if (persistedSections[index] !== undefined) {
+        console.log(`[Notes] Section ${index + 1} already cached — skipping`)
+        return
+      }
+
+      console.log(`[Notes] ✅ Generating section ${index + 1} ONLY — no other sections will be touched`)
 
       generatingRef.current = true
+      inFlightRef.current.add(index)
       setGenerating(true)
 
       try {
@@ -105,15 +137,19 @@ export default function Notes() {
           c.totalSections
         )
 
-        const updated = { ...generatedSections, [index]: result.markdown }
-        setGeneratedSections(updated)
+        const updatedSections = {
+          ...((material.content as SectionedNotesContent).generatedSections ?? {}),
+          [index]: result.markdown,
+        }
+        setGeneratedSections(updatedSections)
 
         // Persist to Dexie so it survives page reloads
         const updatedContent: SectionedNotesContent = {
           ...c,
-          generatedSections: updated,
+          generatedSections: updatedSections,
         }
         await updateMaterial(material.id, { content: updatedContent })
+        console.log(`[Notes] ✅ Section ${index + 1} saved to DB`)
       } catch (err: any) {
         console.error('[Notes] Section generation error:', err)
         toast({
@@ -123,14 +159,17 @@ export default function Notes() {
         })
       } finally {
         generatingRef.current = false
+        inFlightRef.current.delete(index)
         setGenerating(false)
       }
     },
-    [currentMaterial, generatedSections, toast, updateMaterial]
+    // Only depend on currentMaterial — avoid re-creating on every generatedSections state update
+    // (we read persisted state from material.content directly, not from React state)
+    [currentMaterial, toast, updateMaterial]
   )
 
   // ─────────────────────────────────────────────
-  // Navigation
+  // Navigation — auto-generates if section not cached
   // ─────────────────────────────────────────────
   const goToSection = useCallback(
     (nextIndex: number) => {
@@ -140,13 +179,43 @@ export default function Notes() {
 
       setCurrentSectionIndex(nextIndex)
 
-      // Trigger generation if not already cached
-      if (generatedSections[nextIndex] === undefined) {
-        generateForSection(nextIndex)
+      // Auto-generate if this section hasn't been generated yet
+      const persistedSections = content.generatedSections ?? {}
+      if (persistedSections[nextIndex] === undefined && !generatingRef.current) {
+        console.log(`[Notes] Navigated to section ${nextIndex + 1} — auto-generating`)
+        generateForSection(nextIndex, content)
+      } else {
+        console.log(`[Notes] Navigated to section ${nextIndex + 1} — already cached`)
       }
     },
-    [currentMaterial, generatedSections, generateForSection]
+    [currentMaterial, generateForSection]
   )
+
+
+  // ─────────────────────────────────────────────
+  // Safe markdown extractor — handles cases where
+  // stored content is accidentally a JSON string
+  // ─────────────────────────────────────────────
+  const safeMarkdown = useCallback((raw: string | undefined): string => {
+    if (!raw) return ''
+    const trimmed = raw.trim()
+
+    // If it looks like JSON with a "markdown" field, extract it
+    if (trimmed.startsWith('{') && trimmed.includes('"markdown"')) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (parsed?.markdown) return parsed.markdown
+      } catch {
+        // Not valid JSON — fall through
+      }
+    }
+
+    // Strip accidental code fences
+    return trimmed
+      .replace(/^```(?:markdown)?\s*\n?/i, '')
+      .replace(/\n?```\s*$/i, '')
+      .trim()
+  }, [])
 
   // ─────────────────────────────────────────────
   // Copy / Download helpers
@@ -157,18 +226,18 @@ export default function Notes() {
 
     // Legacy: old material with a flat markdown field
     if (!content?.sections?.length) {
-      return content?.markdown || ''
+      return safeMarkdown(content?.markdown || '')
     }
 
     // Section-based: concatenate all generated sections in order
     return content.sections
       .map((s, i) => {
-        const md = generatedSections[i]
+        const md = safeMarkdown(generatedSections[i])
         return md ? `## ${s.title}\n\n${md}` : null
       })
       .filter(Boolean)
       .join('\n\n---\n\n')
-  }, [currentMaterial, generatedSections])
+  }, [currentMaterial, generatedSections, safeMarkdown])
 
   const handleCopy = async () => {
     const text = getAllMarkdown()
@@ -182,19 +251,185 @@ export default function Notes() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleDownload = () => {
-    const text = getAllMarkdown()
-    if (!text) {
+  const handleDownload = async () => {
+    if (!currentMaterial) return
+    const content = currentMaterial.content as SectionedNotesContent
+    const title = content?.title || 'Notes'
+
+    // Gather all generated markdown in section order
+    const sectionsToRender: { title: string; markdown: string }[] = []
+
+    if (content?.sections?.length) {
+      content.sections.forEach((s, i) => {
+        const md = safeMarkdown(generatedSections[i])
+        if (md) sectionsToRender.push({ title: s.title, markdown: md })
+      })
+    } else {
+      const md = safeMarkdown(content?.markdown || '')
+      if (md) sectionsToRender.push({ title, markdown: md })
+    }
+
+    if (sectionsToRender.length === 0) {
       toast({ title: 'Nothing to download yet', description: 'Generate some sections first.', type: 'error' })
       return
     }
-    const blob = new Blob([text], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${currentMaterial?.content?.title || 'notes'}.md`
-    a.click()
-    URL.revokeObjectURL(url)
+
+    setDownloading(true)
+    toast({ title: 'Generating PDF...', description: 'This may take a few seconds.', type: 'success' })
+
+    try {
+      // ── Hidden white-themed container (never visible to user) ──
+      const container = document.createElement('div')
+      container.style.cssText = `
+        position: fixed; top: -99999px; left: -99999px;
+        width: 700px; padding: 40px 60px;
+        background: #ffffff; color: #111111;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 13px; line-height: 1.75;
+      `
+
+      // ── Cover page ──
+      const cover = document.createElement('div')
+      cover.style.cssText = `
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        min-height: 920px; text-align: center;
+      `
+      const dateStr = new Date().toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric',
+      })
+      const authorName = (user as any)?.user_metadata?.name || user?.name || user?.email || 'Student'
+      cover.innerHTML = `
+        <div>
+          <div style="font-family: Arial, Helvetica, sans-serif; font-size: 32px; font-weight: 700; color: #1a1a2e; margin-bottom: 12px; line-height: 1.3;">${title}</div>
+          <div style="width: 60px; height: 2px; background: #1a1a2e; margin: 28px auto;"></div>
+          <div style="font-family: Georgia, serif; font-size: 15px; color: #444; margin-top: 28px;">Created by: <strong style="color: #111;">${authorName}</strong></div>
+          <div style="font-family: Georgia, serif; font-size: 13px; color: #666; margin-top: 6px;">Generated on ${dateStr}</div>
+          <div style="font-family: Arial, sans-serif; font-size: 11px; color: #999; margin-top: 48px; letter-spacing: 0.5px;">PrepMind AI</div>
+        </div>
+      `
+      container.appendChild(cover)
+
+      // ── Section content ──
+      for (const section of sectionsToRender) {
+        const sectionDiv = document.createElement('div')
+        sectionDiv.style.cssText = 'margin-top: 24px; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid #e0e0e0;'
+
+        const htmlContent = section.markdown
+          // Headings — must be processed h3 before h2 to avoid double-matching
+          .replace(/^### (.+)$/gm,
+            '<h3 style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:#1a1a2e;margin:18px 0 6px;">$1</h3>')
+          .replace(/^## (.+)$/gm,
+            '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:700;color:#1a1a2e;margin:24px 0 10px;border-bottom:1px solid #ddd;padding-bottom:6px;">$1</h2>')
+          // Inline formatting
+          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.+?)\*/g, '<em>$1</em>')
+          // Bullet points — tight spacing
+          .replace(/^- (.+)$/gm,
+            '<div style="padding-left:24px;margin:0 0 4px 0;text-indent:-14px;">• $1</div>')
+          // Numbered lists — tight spacing
+          .replace(/^(\d+)\. (.+)$/gm,
+            '<div style="padding-left:24px;margin:0 0 4px 0;">$1. $2</div>')
+          // Paragraph breaks
+          .replace(/\n\n/g, '<div style="margin:8px 0;"></div>')
+          .replace(/\n/g, '<br/>')
+
+        sectionDiv.innerHTML = htmlContent
+        container.appendChild(sectionDiv)
+      }
+
+      document.body.appendChild(container)
+
+      // ── Capture as one tall canvas ──
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      })
+
+      document.body.removeChild(container)
+
+      // ── Smart pagination: slice at whitespace gaps, never through text ──
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pdfPageWidthMm = pdf.internal.pageSize.getWidth()
+      const pdfPageHeightMm = pdf.internal.pageSize.getHeight()
+
+      const canvasWidth = canvas.width
+      const canvasHeight = canvas.height
+      // How many canvas pixels correspond to one PDF page height
+      const pageHeightPx = Math.floor((pdfPageHeightMm / pdfPageWidthMm) * canvasWidth)
+
+      const ctx = canvas.getContext('2d')!
+      const bgR = 255, bgG = 255, bgB = 255 // white background
+
+      /**
+       * Scan upward from `startY` looking for a horizontal row that is
+       * entirely background-colored (whitespace gap between elements).
+       * Returns the y-coordinate of the best cut point.
+       */
+      function findWhitespaceGap(startY: number): number {
+        // Don't scan more than 20% of a page upward
+        const maxScanUp = Math.floor(pageHeightPx * 0.2)
+        const minY = Math.max(0, startY - maxScanUp)
+
+        for (let y = startY; y > minY; y--) {
+          const row = ctx.getImageData(0, y, canvasWidth, 1).data
+          let isBlank = true
+          // Sample every 4th pixel for speed (still accurate enough)
+          for (let x = 0; x < canvasWidth * 4; x += 16) {
+            const r = row[x], g = row[x + 1], b = row[x + 2]
+            if (Math.abs(r - bgR) > 8 || Math.abs(g - bgG) > 8 || Math.abs(b - bgB) > 8) {
+              isBlank = false
+              break
+            }
+          }
+          if (isBlank) return y
+        }
+        // No gap found — fall back to the original cut point
+        return startY
+      }
+
+      // Build list of slice points
+      const slicePoints: number[] = [0]
+      let currentY = 0
+
+      while (currentY + pageHeightPx < canvasHeight) {
+        const idealCut = currentY + pageHeightPx
+        const smartCut = findWhitespaceGap(idealCut)
+        slicePoints.push(smartCut)
+        currentY = smartCut
+      }
+
+      // Render each slice as a PDF page
+      for (let i = 0; i < slicePoints.length; i++) {
+        const sliceTop = slicePoints[i]
+        const sliceBottom = i + 1 < slicePoints.length ? slicePoints[i + 1] : canvasHeight
+        const sliceHeight = sliceBottom - sliceTop
+
+        if (sliceHeight <= 0) continue
+
+        // Extract this slice from the big canvas
+        const pageCanvas = document.createElement('canvas')
+        pageCanvas.width = canvasWidth
+        pageCanvas.height = sliceHeight
+        const pageCtx = pageCanvas.getContext('2d')!
+        pageCtx.drawImage(canvas, 0, sliceTop, canvasWidth, sliceHeight, 0, 0, canvasWidth, sliceHeight)
+
+        const pageImg = pageCanvas.toDataURL('image/png')
+        const pageHeightMm = (sliceHeight / canvasWidth) * pdfPageWidthMm
+
+        if (i > 0) pdf.addPage()
+        pdf.addImage(pageImg, 'PNG', 0, 0, pdfPageWidthMm, pageHeightMm)
+      }
+
+      pdf.save(`${title}.pdf`)
+      toast({ title: 'PDF downloaded!', type: 'success' })
+    } catch (err: any) {
+      console.error('[Notes] PDF generation error:', err)
+      toast({ title: 'PDF generation failed', description: err?.message || 'Please try again.', type: 'error' })
+    } finally {
+      setDownloading(false)
+    }
   }
 
   // ─────────────────────────────────────────────
@@ -249,8 +484,8 @@ export default function Notes() {
           <Button variant="outline" size="icon" onClick={handleCopy} title="Copy all generated notes">
             {copied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
           </Button>
-          <Button variant="outline" size="icon" onClick={handleDownload} title="Download all notes as Markdown">
-            <Download className="h-4 w-4" />
+          <Button variant="outline" size="icon" onClick={handleDownload} disabled={downloading} title="Download all notes as PDF">
+            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           </Button>
         </div>
       </div>
@@ -332,7 +567,7 @@ export default function Notes() {
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground ml-auto" />
                 )}
               </div>
-              <ReactMarkdown>{currentMarkdown}</ReactMarkdown>
+              <ReactMarkdown>{safeMarkdown(currentMarkdown)}</ReactMarkdown>
             </div>
           ) : (
             // Not yet generated and not currently generating — shouldn't normally show,
@@ -402,6 +637,22 @@ function LegacyNotes({
   onDownload: () => void
   copied: boolean
 }) {
+  // Safely extract markdown — handles JSON-wrapped content
+  let markdown = content?.markdown || content?.text || 'No content available.'
+  if (typeof markdown === 'string') {
+    const trimmed = markdown.trim()
+    if (trimmed.startsWith('{') && trimmed.includes('"markdown"')) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (parsed?.markdown) markdown = parsed.markdown
+      } catch { /* not JSON — use as-is */ }
+    }
+    markdown = markdown
+      .replace(/^```(?:markdown)?\s*\n?/i, '')
+      .replace(/\n?```\s*$/i, '')
+      .trim()
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -428,7 +679,7 @@ function LegacyNotes({
       <Card>
         <CardContent className="p-8">
           <div className="markdown-content prose prose-invert max-w-none">
-            <ReactMarkdown>{content?.markdown || content?.text || 'No content available.'}</ReactMarkdown>
+            <ReactMarkdown>{markdown}</ReactMarkdown>
           </div>
         </CardContent>
       </Card>

@@ -128,60 +128,52 @@ export default function UploadPage() {
           status: 'extracted',
         })
 
-        // ── Generate Notes section by section sequentially ──
-        const generatedSections: Record<number, string> = {}
-        
-        for (let s = 0; s < sections.length; s++) {
-          setCurrentStep(`Generating section ${s + 1} of ${sections.length}...`)
-          setProgress(stepBase + 20 + (30 * (s / sections.length))) // progress 20% to 50%
-          
-          try {
-            const result = await generateSectionNotes(
-              sections[s].content,
-              sections[s].title,
-              file.name,
-              s,
-              sections.length
-            )
-            generatedSections[s] = result.markdown
-          } catch (err) {
-            console.error(`Failed to generate section ${s}:`, err)
-            generatedSections[s] = `*Failed to generate notes for this section.*`
-          }
-          
-          if (s < sections.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500))
-          }
-        }
-
+        // ── Create notes container (no content yet — generated lazily) ──
         await addMaterial({
           documentId: docResult.document.id,
           type: 'notes',
           content: {
             title: `Notes: ${file.name}`,
             sections,
-            generatedSections,
+            generatedSections: {},
             totalSections: sections.length,
             markdown: '',
           },
         })
 
-        // ── Bulk-generate flashcards, quiz, diagrams (skip notes) ──
-        setCurrentStep(`Generating study materials for ${file.name}...`)
+        // ── Create flashcards container (no cards yet — generated on-demand) ──
+        const cleanName = file.name.replace(/\.[^/.]+$/, '')
+        await addMaterial({
+          documentId: docResult.document.id,
+          type: 'flashcards',
+          content: {
+            title: `Flashcards: ${cleanName}`,
+            cards: [],
+          },
+        })
+
+        // ── Auto-generate quiz only (notes are section-by-section, flashcards are on-demand) ──
+        setCurrentStep(`Generating quiz for ${file.name}...`)
         setProgress(stepBase + 50)
 
-        const materials = await generateStudyMaterials(extractedText, file.name, true)
+        const materials = await generateStudyMaterials(extractedText, file.name)
 
         setCurrentStep(`Saving ${materials.length} materials...`)
         setProgress(stepBase + 80)
 
         for (const material of materials) {
+          const content = { ...material.content }
+          const cleanName = file.name.replace(/\.[^/.]+$/, "")
+          
+          if (material.type === 'quiz') content.title = `Quiz: ${cleanName}`
+
           await addMaterial({
             documentId: docResult.document.id,
             type: material.type,
-            content: material.content,
+            content,
           })
         }
+
 
         await updateDocument(docResult.document.id, { status: 'completed' })
         setProgress(stepBase + 100 / files.length)

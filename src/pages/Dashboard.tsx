@@ -44,8 +44,32 @@ export default function Dashboard() {
       const flashcardSets = allMaterials.filter((m: any) => m.type === 'flashcards').length
       const quizzes = allMaterials.filter((m: any) => m.type === 'quiz').length
 
-      const sessions = await db.studySessions.toArray()
-      const streak = sessions.length > 0 ? Math.min(sessions.length, 7) : 0
+      const allAttempts = await db.quizAttempts.toArray()
+      let streak = 0
+      if (allAttempts.length > 0) {
+        const dates = allAttempts.map(a => new Date(a.attemptedAt).toISOString().split('T')[0])
+        const uniqueDates = [...new Set(dates)].sort().reverse()
+
+        if (uniqueDates.length > 0) {
+          const today = new Date().toISOString().split('T')[0]
+          const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
+          if (uniqueDates[0] === today || uniqueDates[0] === yesterday) {
+            streak = 1
+            let current = new Date(uniqueDates[0])
+            for (let i = 1; i < uniqueDates.length; i++) {
+              const prev = new Date(uniqueDates[i])
+              const diffDays = Math.round((current.getTime() - prev.getTime()) / 86400000)
+              if (diffDays === 1) {
+                streak++
+                current = prev
+              } else {
+                break
+              }
+            }
+          }
+        }
+      }
 
       setStats({ notes, flashcards: flashcardSets, quizzes, streak })
     }
@@ -63,7 +87,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Welcome back, {user?.name || 'Student'}!</h1>
+        <h1 className="text-3xl font-bold">Welcome back, {(user as any)?.user_metadata?.full_name || (user as any)?.user_metadata?.name || user?.name || user?.email?.split('@')[0] || 'Student'}!</h1>
         <p className="text-muted-foreground mt-1">Ready to ace your exams? Let's get studying.</p>
       </div>
 

@@ -7,14 +7,16 @@ import { db } from '@/lib/db'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { ArrowLeft, CheckCircle, XCircle, Trophy, RotateCcw, Target } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, Trophy, RotateCcw, Target, Sparkles } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import { generateMoreQuizQuestions } from '@/lib/ai/aiService'
+import { updateWeakAreas } from '@/lib/weakAreaTracker'
 
 export default function Quiz() {
   const params = useParams<{ materialId: string }>()
   const materialId = Number(params?.materialId || 0)
   const router = useRouter()
-  const { currentMaterial, getMaterial } = useMaterialStore()
+  const { currentMaterial, getMaterial, updateMaterial } = useMaterialStore()
   const { toast } = useToast()
 
   const [questions, setQuestions] = useState<any[]>([])
@@ -23,7 +25,8 @@ export default function Quiz() {
   const [showResult, setShowResult] = useState(false)
   const [answers, setAnswers] = useState<any[]>([])
   const [quizComplete, setQuizComplete] = useState(false)
-  const [startTime] = useState(Date.now())
+  const [startTime, setStartTime] = useState(Date.now())
+  const [isGenerating, setIsGenerating] = useState(false)
 
   useEffect(() => {
     if (!Number.isFinite(materialId)) return
@@ -73,6 +76,19 @@ export default function Quiz() {
       durationSeconds: Math.round((Date.now() - startTime) / 1000),
     } as any)
 
+    // Track weak areas
+    try {
+      const mat = await db.materials.get(materialId)
+      if (mat) {
+        const doc = await db.documents.get(mat.documentId)
+        if (doc?.courseId) {
+          await updateWeakAreas(doc.courseId, questions, finalAnswers)
+        }
+      }
+    } catch (err) {
+      console.error('[WeakAreas] Failed to update:', err)
+    }
+
     setQuizComplete(true)
   }
 
@@ -92,6 +108,40 @@ export default function Quiz() {
     setShowResult(false)
     setAnswers([])
     setQuizComplete(false)
+    setStartTime(Date.now())
+  }
+
+  const handleGenerateMore = async () => {
+    try {
+      setIsGenerating(true)
+      const doc = await db.documents.get(currentMaterial.documentId)
+      if (!doc || !doc.extractedText) throw new Error('Document text not found')
+
+      const previousQuestionsText = questions.map(q => q.question).join('\n')
+      toast({ title: 'Generating...', description: 'Creating 15 new questions' })
+      
+      const newQuizData = await generateMoreQuizQuestions(doc.extractedText, doc.filename, previousQuestionsText)
+      
+      if (!newQuizData.questions || newQuizData.questions.length === 0) {
+        throw new Error('Failed to generate valid questions')
+      }
+      
+      const updatedContent = { ...currentMaterial.content, questions: newQuizData.questions }
+      await updateMaterial(materialId, { content: updatedContent })
+      
+      setQuestions(newQuizData.questions)
+      setCurrentIndex(0)
+      setSelectedAnswer(null)
+      setShowResult(false)
+      setAnswers([])
+      setQuizComplete(false)
+      setStartTime(Date.now())
+      toast({ title: 'Success', description: 'New questions generated!', type: 'success' })
+    } catch (err: any) {
+      toast({ title: 'Generation failed', description: err?.message || 'Unknown error', type: 'error' })
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   if (!currentMaterial) {
@@ -127,14 +177,22 @@ export default function Quiz() {
               You got {currentScore} out of {questions.length} questions correct
             </p>
 
-            <div className="flex justify-center gap-4">
+            <div className="flex justify-center gap-4 flex-wrap">
               <Button variant="outline" onClick={() => router.back()}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
-              <Button onClick={restartQuiz}>
+              <Button onClick={restartQuiz} disabled={isGenerating}>
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Try Again
+              </Button>
+              <Button variant="secondary" onClick={handleGenerateMore} disabled={isGenerating}>
+                {isGenerating ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-primary mr-2"></div>
+                ) : (
+                  <Sparkles className="h-4 w-4 mr-2" />
+                )}
+                {isGenerating ? 'Generating...' : 'Generate More Questions'}
               </Button>
             </div>
           </CardContent>
