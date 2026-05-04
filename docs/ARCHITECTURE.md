@@ -1,150 +1,301 @@
 # Architecture
 
-This document explains how ExamHelper AI is structured, how data flows through the app, and where to extend it safely.
+> Last updated: May 2026
 
-## System Summary
+This document describes the system design of ExamHelper AI — how the application is structured, how data flows through it, and how to extend it safely.
 
-ExamHelper AI is a client-heavy web app:
-- UI and routing in React
-- State and side effects in Zustand stores
-- Persistence in IndexedDB via Dexie
-- Optional Supabase authentication
-- AI content generation through browser-side API calls
+## Table of Contents
+
+- [System Overview](#system-overview)
+- [Runtime Modes](#runtime-modes)
+- [Route Map](#route-map)
+- [Data Flow](#data-flow)
+- [Module Reference](#module-reference)
+- [Database Schema](#database-schema)
+- [AI Pipeline](#ai-pipeline)
+- [Error Handling](#error-handling)
+- [Extension Guide](#extension-guide)
+- [Performance Considerations](#performance-considerations)
+
+---
+
+## System Overview
+
+ExamHelper AI is a **client-heavy** Next.js application. The browser handles nearly all computation:
+
+- **Routing and rendering** — Next.js App Router with React 18
+- **State management** — Zustand stores for auth, courses, documents, and materials
+- **Persistence** — IndexedDB via Dexie (all study data lives in the browser)
+- **AI generation** — Browser-side API calls to Groq (LLaMA 3.3 70B)
+- **Authentication** — Optional Supabase auth with demo-user fallback
+
+There is no custom backend server. The app communicates directly with third-party APIs from the client.
+
+```mermaid
+graph TB
+    subgraph Browser
+        UI[React UI + Next.js App Router]
+        Stores[Zustand Stores]
+        DB[(IndexedDB via Dexie)]
+        Parser[Document Parser]
+    end
+
+    subgraph External APIs
+        Groq[Groq LLM API]
+        Supa[Supabase Auth]
+    end
+
+    UI --> Stores
+    Stores --> DB
+    UI --> Parser
+    Parser --> Stores
+    Stores --> Groq
+    Stores --> Supa
+```
+
+---
 
 ## Runtime Modes
 
-### 1. Demo mode
+The application supports two runtime modes, determined automatically at startup based on the presence of environment variables.
 
-Enabled when Supabase and/or AI keys are missing.
+### Demo Mode
 
-- Auth: auto-logs in a demo user
-- AI generation: returns deterministic sample materials
-- Storage: local IndexedDB only
+Activated when Groq API keys and/or Supabase credentials are missing.
 
-### 2. Configured mode
+| Aspect | Behavior |
+|---|---|
+| Authentication | Auto-logs in a hardcoded demo user |
+| AI generation | Returns deterministic sample materials |
+| Storage | Local IndexedDB only |
 
-Enabled when env keys are provided.
+### Configured Mode
 
-- Auth: Supabase session-backed auth
-- AI generation: Gemini first, Groq fallback
-- Storage: still local IndexedDB for course/doc/material data
+Activated when at least one set of API keys is present in `.env.local`.
 
-## App Route Map
+| Aspect | Behavior |
+|---|---|
+| Authentication | Supabase session-backed auth (email + password) |
+| AI generation | Groq LLaMA 3.3 70B with key-pool rotation |
+| Storage | Local IndexedDB (same as demo mode) |
 
-Defined in src/App.jsx:
+> **Note:** Even in configured mode, all study data is stored locally. Supabase is used only for authentication, not data persistence.
 
-- Public routes:
-  - /
-  - /login
-  - /register
-- Protected routes under /app:
-  - /app (dashboard)
-  - /app/courses
-  - /app/courses/:courseId
-  - /app/upload
-  - /app/notes/:materialId
-  - /app/flashcards/:materialId
-  - /app/quiz/:materialId
-  - /app/diagrams/:materialId
+---
+
+## Route Map
+
+Defined via the Next.js App Router in `src/app/`.
+
+### Public Routes
+
+| Path | Page Component | Description |
+|---|---|---|
+| `/` | `Landing.tsx` | Marketing landing page |
+| `/login` | `Login.tsx` | Sign-in form |
+| `/register` | `Register.tsx` | Account creation form |
+
+### Protected Routes (under `/app`)
+
+All routes under `/app` are wrapped by `src/app/app/layout.tsx`, which enforces authentication and renders the sidebar layout.
+
+| Path | Page Component | Description |
+|---|---|---|
+| `/app` | `Dashboard.tsx` | Overview with stats and recent activity |
+| `/app/courses` | `Courses.tsx` | Course list with create/delete |
+| `/app/courses/:courseId` | `CourseDetail.tsx` | Course detail with tabs (documents, materials, progress) |
+| `/app/upload` | `Upload.tsx` | File upload and processing |
+| `/app/notes/:materialId` | `Notes.tsx` | Section-by-section note viewer |
+| `/app/flashcards/:materialId` | `Flashcards.tsx` | Flashcard study with spaced repetition |
+| `/app/quiz/:materialId` | `Quiz.tsx` | Quiz mode with scoring |
+| `/app/exam/:materialId` | `ExamMode.tsx` | Timed exam simulation |
+| `/app/diagrams/:materialId` | `Diagrams.tsx` | Mermaid diagram viewer |
+
+---
 
 ## Data Flow
 
+### Upload → Generation Pipeline
+
 ```mermaid
 flowchart TD
-    A[User uploads PDF/PPTX] --> B[Upload page]
-    B --> C[Document store creates document record]
-    C --> D[Parser extracts text]
-    D --> E[AI service generates materials]
-    E --> F[Material store saves notes/flashcards/quiz/diagram]
-    F --> G[Course detail and study pages render materials]
+    A[User uploads PDF / PPTX] --> B[Upload page accepts file]
+    B --> C[documentParser.ts extracts text]
+    C --> D[textSplitter.ts splits into sections]
+    D --> E[Document record saved to IndexedDB]
+    E --> F[aiService.ts generates quiz on upload]
+    F --> G[Material record saved to IndexedDB]
+    G --> H[User navigates to study pages]
 ```
 
-## Core Modules
+### On-Demand Generation
 
-### UI layer
+Notes, flashcards, and diagrams are **not** generated at upload time. They are generated on-demand when the user first navigates to the corresponding study page:
 
-- src/pages: Route-level pages
-- src/components: Reusable and feature-specific components
-- src/components/layout/Layout.jsx: Main protected shell
+```mermaid
+flowchart LR
+    A[User opens Notes page] --> B[Check if notes exist in DB]
+    B -->|No| C[generateSectionNotes per section]
+    B -->|Yes| D[Render cached notes]
+    C --> E[Save to IndexedDB]
+    E --> D
+```
 
-### State layer
+---
 
-- src/stores/authStore.js
-  - User session state
-  - Demo-mode fallback logic
-- src/stores/courseStore.js
-  - CRUD for courses
-- src/stores/documentStore.js
-  - CRUD for documents
-- src/stores/materialStore.js
-  - CRUD for generated materials
+## Module Reference
 
-### Data layer
+### UI Layer
 
-- src/lib/db.js
-  - Dexie schema and local database initialization
-- src/lib/supabase.js
-  - Supabase client creation and mode detection
+| Module | Location | Purpose |
+|---|---|---|
+| Page components | `src/pages/*.tsx` | Full-page views rendered by routes |
+| Layout shell | `src/components/layout/Layout.tsx` | Sidebar + header wrapper for protected routes |
+| UI primitives | `src/components/ui/*.tsx` | Reusable components (Button, Card, Dialog, etc.) |
+| Toaster provider | `src/components/providers/ToasterProvider.tsx` | Toast notification renderer |
 
-### AI layer
+### State Layer
 
-- src/lib/ai/aiService.js
-  - Provider initialization
-  - Fallback strategy (Gemini -> Groq -> demo content)
-  - JSON extraction/repair helper for model output
-- src/lib/ai/prompts.js
-  - Prompt templates for material generation
+| Store | Location | Purpose |
+|---|---|---|
+| `useAuthStore` | `src/stores/authStore.ts` | User session, login/register/logout, demo fallback |
+| `useCourseStore` | `src/stores/courseStore.ts` | CRUD operations for courses |
+| `useDocumentStore` | `src/stores/documentStore.ts` | CRUD operations for uploaded documents |
+| `useMaterialStore` | `src/stores/materialStore.ts` | CRUD operations for generated materials |
 
-### Parsing layer
+### Data Layer
 
-- src/lib/parsers/documentParser.js
-  - PDF extraction via PDF.js
-  - PPTX extraction via JSZip + XML parsing
+| Module | Location | Purpose |
+|---|---|---|
+| Database | `src/lib/db.ts` | Dexie schema, table definitions, version migrations |
+| Supabase client | `src/lib/supabase.ts` | Client initialization, mode detection, diagnostic logging |
+| Weak area tracker | `src/lib/weakAreaTracker.ts` | Topic extraction from quiz questions, per-topic performance upserts |
 
-## IndexedDB Schema
+### AI Layer
 
-Configured in src/lib/db.js:
+| Module | Location | Purpose |
+|---|---|---|
+| AI service | `src/lib/ai/aiService.ts` | Key pool management, Groq API calls, JSON extraction, demo fallback |
+| Prompt templates | `src/lib/ai/prompts.ts` | Prompt builders for notes, flashcards, quiz, and diagram generation |
 
-- courses
-- documents
-- materials
-- flashcards
-- quizAttempts
-- studySessions
+### Parsing Layer
 
-All user-generated study content is persisted locally in this schema.
+| Module | Location | Purpose |
+|---|---|---|
+| Document parser | `src/lib/parsers/documentParser.ts` | PDF extraction (PDF.js) and PPTX extraction (JSZip + XML regex) |
+| Text splitter | `src/lib/parsers/textSplitter.ts` | Splits extracted text into sections using page/slide markers |
 
-## Error Handling Strategy
+### Algorithm Layer
 
-- Store-level async functions return success/error payloads.
-- Upload pipeline wraps extraction and generation in try/catch.
-- AI responses are parsed through a resilient JSON extraction function.
-- UI uses toast notifications for user-facing errors.
+| Module | Location | Purpose |
+|---|---|---|
+| Spaced repetition | `src/lib/generators/spacedRepetition.ts` | SM-2 algorithm for flashcard review scheduling |
 
-## Extension Points
+---
 
-### Add a new material type
+## Database Schema
 
-1. Update AI generation logic in src/lib/ai/aiService.js.
-2. Add storage handling in relevant store if needed.
-3. Add a dedicated route/page in src/pages.
-4. Register route in src/App.jsx.
-5. Surface entry points in course detail or dashboard UI.
+Managed by Dexie (IndexedDB) in `src/lib/db.ts`. Currently at schema version 3.
 
-### Change parser support
+| Table | Key Fields | Purpose |
+|---|---|---|
+| `courses` | `id`, `courseCode`, `courseName`, `semester` | Course metadata |
+| `documents` | `id`, `courseId`, `filename`, `extractedText`, `sections` | Uploaded files and extracted content |
+| `materials` | `id`, `documentId`, `type`, `content` | Generated study materials (notes, quiz, flashcards, diagrams) |
+| `flashcards` | `id`, `materialId`, `front`, `back`, `nextReview`, `easeFactor` | Individual flashcards with SRS fields |
+| `quizAttempts` | `id`, `materialId`, `score`, `answers`, `durationSeconds` | Quiz/exam attempt history |
+| `studySessions` | `id`, `date`, `duration`, `cardsReviewed` | Study session logs |
+| `weakAreas` | `id`, `courseId`, `topic`, `wrongCount`, `totalAttempts` | Per-topic performance tracking |
 
-1. Extend file type detection in src/lib/parsers/documentParser.js.
-2. Add extraction function for the new format.
-3. Update Upload page file filter and accepted extensions.
+### Version History
 
-### Swap AI provider strategy
+| Version | Change |
+|---|---|
+| v1 | Initial schema (courses, documents, materials, flashcards, quizAttempts, studySessions) |
+| v2 | Added `sections` field to `documents` for section-by-section note generation |
+| v3 | Added `weakAreas` table for per-topic quiz performance tracking |
 
-1. Update provider initialization in src/lib/ai/aiService.js.
-2. Preserve output contract (notes/flashcards/quiz/diagram JSON shape).
-3. Keep demo-mode generation intact for no-key development.
+---
 
-## Performance Notes
+## AI Pipeline
 
-- Generation input is truncated before provider calls to stay inside token limits.
-- Parsing and generation happen in the browser, so large files can impact UI responsiveness.
-- Consider web workers for heavy parsing/generation if scaling this app further.
+### Key Pool Architecture
+
+The AI service uses **task-isolated Groq API key pools** to prevent rate limiting on one task from blocking another:
+
+```mermaid
+flowchart LR
+    Notes[Notes Generation] --> NK[GROQ_NOTES_KEY 1-3]
+    Flash[Flashcard Generation] --> FK[GROQ_FLASHCARD_KEY 1-2]
+    Quiz[Quiz Generation] --> QK[GROQ_QUIZ_KEY 1-2]
+    Diagrams[Diagram Generation] --> FK
+```
+
+Each pool supports automatic key rotation: if a key hits a 429 rate limit, the next key in the pool is tried before failing.
+
+### Generation Functions
+
+| Function | Input | Output | Called From |
+|---|---|---|---|
+| `generateStudyMaterials()` | Full document text | Quiz material | Upload page |
+| `generateSectionNotes()` | Single section text | Markdown notes | Notes page |
+| `generateFlashcardsOnly()` | Full document text | 30 flashcards | Flashcards page |
+| `generateMoreFlashcards()` | Text + previous fronts | 30 new flashcards | Flashcards page |
+| `generateDiagramMaterial()` | Full document text | Mermaid code | Diagrams page |
+| `generateMoreQuizQuestions()` | Text + previous Qs | 15 new questions | Quiz page |
+| `generateWeakAreaQuiz()` | Text + weak topics | 15 targeted questions | Course detail |
+
+### JSON Extraction
+
+All AI responses pass through `extractJSON()`, a resilient parser that handles:
+- Direct JSON strings
+- JSON wrapped in markdown code blocks
+- Trailing commas and smart quotes
+- Partial JSON objects extracted via regex
+
+---
+
+## Error Handling
+
+| Layer | Strategy |
+|---|---|
+| **Zustand stores** | Async methods catch errors, set `error` state, and return `{ success, error }` payloads |
+| **Upload pipeline** | Text extraction and AI generation wrapped in `try/catch`; failures surface via toast notifications |
+| **AI service** | Key rotation on 429s; graceful fallback to demo content when all keys are exhausted |
+| **JSON parsing** | Multi-stage extraction (direct parse → code block → regex) with error logging at each stage |
+| **Auth** | 15-second timeout on Supabase calls to prevent indefinite hangs |
+
+---
+
+## Extension Guide
+
+### Adding a New Material Type
+
+1. Add a generation function in `src/lib/ai/aiService.ts`
+2. Add a prompt template in `src/lib/ai/prompts.ts` (if needed)
+3. Create a page component in `src/pages/`
+4. Add a route in `src/app/app/`
+5. Update `CourseDetail.tsx` to link to the new material
+6. Update the `materials` table type discriminator if needed
+
+### Supporting a New File Format
+
+1. Add an extraction function in `src/lib/parsers/documentParser.ts`
+2. Update the `extractText()` dispatcher to handle the new extension
+3. Update the `Upload.tsx` file input `accept` attribute
+
+### Swapping the AI Provider
+
+1. Add provider initialization in `src/lib/ai/aiService.ts`
+2. Replace or supplement `groqGenerate()` with the new provider's call
+3. Preserve the output contract (JSON shape) for each material type
+4. Keep `buildDemoMaterials()` and `generateDemoContent()` intact for keyless development
+
+---
+
+## Performance Considerations
+
+- **Input truncation** — AI generation input is truncated (default 4,000 chars) to stay within Groq free-tier token limits
+- **Rate limiting** — A 1-second cooldown is applied between section note generations to avoid hitting Groq TPM limits
+- **Client-side parsing** — PDF.js and JSZip run on the main thread; very large files (80+ slides) may cause UI jank. Consider the [offline Python script](../scripts/README.md) for heavy preprocessing
+- **IndexedDB limits** — Browsers typically allow 50–100 MB per origin. Extracted text from large documents can consume significant storage

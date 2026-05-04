@@ -1,5 +1,19 @@
-# Logs
-logs
+# ── Dependencies ──────────────────────────────────────────────────
+node_modules/
+
+# ── Build output ──────────────────────────────────────────────────
+dist/
+dist-ssr/
+.next/
+out/
+
+# ── Environment variables ────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Logs ──────────────────────────────────────────────────────────
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,34 +21,28 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Next.js
-.next/
-out/
-
-# Tooling caches
+# ── Tooling caches ────────────────────────────────────────────────
 .turbo/
 .vercel/
 coverage/
 *.tsbuildinfo
 .eslintcache
 
-# Editor directories and files
+# ── Editor / OS files ─────────────────────────────────────────────
 .vscode/*
 !.vscode/extensions.json
-.idea
+!.vscode/settings.json
+.idea/
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Environment variables
-.env
-.env.local
-.env.*.local
+# ── Python (scripts/) ────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+scripts/master_extracted_text.txt
