@@ -12,6 +12,17 @@ dist
 dist-ssr
 *.local
 
+# Next.js
+.next/
+out/
+
+# Tooling caches
+.turbo/
+.vercel/
+coverage/
+*.tsbuildinfo
+.eslintcache
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
