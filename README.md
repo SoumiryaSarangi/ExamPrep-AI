@@ -1,7 +1,7 @@
 <p align="center">
-  <h1 align="center">ExamHelper AI</h1>
+  <h1 align="center">SenseiAI</h1>
   <p align="center">
-    An AI-powered study platform that transforms lecture materials into exam-ready resources.
+    AI-powered study platform that transforms lecture slides into notes, flashcards, quizzes and exam practice — built for BTech students.
     <br />
     <a href="docs/ARCHITECTURE.md"><strong>Architecture »</strong></a> ·
     <a href="docs/ENVIRONMENT.md"><strong>Environment Setup »</strong></a> ·
@@ -13,25 +13,27 @@
 
 ## Overview
 
-ExamHelper AI is a local-first web application that lets students upload PDF or PowerPoint files and automatically generate structured study materials using large language models. All data is stored in the browser via IndexedDB — no backend server required.
+**SenseiAI** is a comprehensive, local-first web application engineered specifically to help students study smarter, not harder. By simply uploading your PDF or PowerPoint lecture slides, SenseiAI leverages state-of-the-art Large Language Models (LLaMA 3.3 70B via Groq) to automatically generate highly structured, exam-ready study materials in seconds. 
+
+Designed with a premium dark-mode aesthetic and engineered for privacy and speed, SenseiAI stores your personal study data locally in your browser via IndexedDB.
 
 ### What It Does
 
 | Upload a file | Get study materials |
 |---|---|
-| PDF or PPTX lecture slides | **Notes** — section-by-section markdown summaries |
-| | **Flashcards** — 30 cards with spaced repetition scheduling |
-| | **Quizzes** — 15 multiple-choice questions with explanations |
-| | **Diagrams** — Mermaid mind maps and flowcharts |
+| PDF or PPTX lecture slides | **Notes** — comprehensive, section-by-section markdown summaries |
+| | **Flashcards** — exactly 30 targeted cards with SM-2 spaced repetition scheduling |
+| | **Quizzes** — 15 rigorous multiple-choice questions with detailed explanations |
+| | **Exam Mode** — full-length timed practice exams simulating real test conditions |
 
 ### Key Capabilities
 
-- **Section-by-section note generation** — documents are split into logical sections; notes are generated independently per section for higher quality and full coverage
-- **Spaced repetition** — flashcards use the SM-2 algorithm to schedule reviews at optimal intervals
-- **Weak area tracking** — quiz results are analyzed per-topic; a dedicated practice mode targets your weakest subjects
-- **Exam mode** — timed, full-length practice exams with scoring and review
-- **Dual runtime modes** — works fully offline in demo mode; add API keys for real AI generation
-- **Optional authentication** — Supabase auth with automatic demo-user fallback
+- **Section-by-section note generation** — documents are automatically split into logical sections; notes are generated independently per section for maximum quality and granular coverage.
+- **Spaced repetition** — flashcards use the proven SM-2 algorithm to schedule reviews at optimal intervals for maximum retention.
+- **Weak area tracking** — AI analyzes your quiz results per-topic, actively identifying your weakest subjects and creating targeted practice sessions.
+- **Exam mode** — timed, simulated practice exams designed to build testing speed and confidence.
+- **Dual runtime modes** — fully offline in demo mode, or add your Groq API keys for blazing-fast live AI generation.
+- **Optional authentication** — Supabase auth integration with an automatic demo-user fallback system.
 
 ## Tech Stack
 
