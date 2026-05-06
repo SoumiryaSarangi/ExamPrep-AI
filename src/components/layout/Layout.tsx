@@ -186,7 +186,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <div className={cn('flex items-center', collapsed ? 'flex-col justify-center gap-0' : 'gap-3')}>
                 <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0 ring-2 ring-primary/20">
                   <span className="text-primary font-semibold text-sm">
-                    {user?.email?.[0]?.toUpperCase() || 'U'}
+                    {(user?.user_metadata?.name || user?.user_metadata?.full_name || user?.name || user?.email || 'U')[0].toUpperCase()}
                   </span>
                 </div>
                 <div
@@ -196,7 +196,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   )}
                 >
                   <p className="text-sm font-medium truncate">
-                    {user?.name || user?.email || 'User'}
+                    {user?.user_metadata?.name || user?.user_metadata?.full_name || user?.name || user?.email || 'User'}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {user?.isDemo ? 'Demo Mode' : user?.email}

@@ -16,6 +16,11 @@ interface AuthUser {
   email?: string
   name?: string
   isDemo?: boolean
+  user_metadata?: {
+    name?: string
+    full_name?: string
+    [key: string]: any
+  }
 }
 
 interface AuthResult {
