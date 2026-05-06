@@ -154,8 +154,8 @@ export default function Quiz() {
 
   if (questions.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto text-center py-12">
-        <Target className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+      <div className="max-w-2xl mx-auto text-center py-12 animate-fade-in">
+        <div className="h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4 animate-float"><Target className="h-8 w-8 text-muted-foreground/50" /></div>
         <h2 className="text-xl font-semibold mb-2">No quiz available</h2>
         <p className="text-muted-foreground mb-4">This material does not have any quiz questions.</p>
         <Button onClick={() => router.back()}>Go Back</Button>
@@ -167,10 +167,10 @@ export default function Quiz() {
     const score = Math.round((currentScore / questions.length) * 100)
 
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-2xl mx-auto space-y-6 animate-fade-in-scale">
         <Card className="text-center py-12">
           <CardContent>
-            <Trophy className={`h-20 w-20 mx-auto mb-6 ${score >= 70 ? 'text-yellow-500' : 'text-muted-foreground'}`} />
+            <div className={`h-20 w-20 rounded-3xl mx-auto mb-6 flex items-center justify-center ${score >= 70 ? 'bg-[hsl(var(--accent-amber))]/15' : 'bg-muted/50'}`}><Trophy className={`h-10 w-10 ${score >= 70 ? 'text-[hsl(var(--accent-amber))]' : 'text-muted-foreground'}`} /></div>
             <h2 className="text-3xl font-bold mb-2">Quiz Complete!</h2>
             <p className="text-5xl font-bold text-primary mb-4">{score}%</p>
             <p className="text-muted-foreground mb-6">
@@ -207,7 +207,7 @@ export default function Quiz() {
               const answer = answers[idx]
               const isCorrect = answer?.isCorrect
               return (
-                <div key={idx} className={`p-4 rounded-lg ${isCorrect ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                <div key={idx} className={`p-4 rounded-xl transition-all ${isCorrect ? 'bg-[hsl(var(--accent-green))]/10 border border-[hsl(var(--accent-green))]/20' : 'bg-[hsl(var(--accent-red))]/10 border border-[hsl(var(--accent-red))]/20'}`}>
                   <div className="flex items-start gap-3">
                     {isCorrect ? (
                       <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
@@ -231,9 +231,9 @@ export default function Quiz() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between animate-fade-in">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-xl">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -251,7 +251,7 @@ export default function Quiz() {
 
           <div className="space-y-3">
             {currentQuestion?.options?.map((option: string, idx: number) => {
-              let className = 'w-full p-4 text-left rounded-lg border transition-colors '
+              let className = 'w-full p-4 text-left rounded-xl border transition-all duration-250 '
 
               if (showResult) {
                 if (idx === currentQuestion.correct) {

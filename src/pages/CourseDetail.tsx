@@ -10,6 +10,7 @@ import { db, type WeakAreaRecord } from '@/lib/db'
 import { generateWeakAreaQuiz } from '@/lib/ai/aiService'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Skeleton, SkeletonListItem, SkeletonStatCard } from '@/components/ui/skeleton'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -73,9 +74,9 @@ function ProgressRing({ percent }: { percent: number }) {
   }, [percent, circumference])
 
   const color =
-    percent <= 40 ? '#ef4444' :
-    percent <= 70 ? '#f97316' :
-                   '#22c55e'
+    percent <= 40 ? 'hsl(var(--accent-red))' :
+      percent <= 70 ? 'hsl(var(--accent-amber))' :
+        'hsl(var(--accent-green))'
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -274,8 +275,33 @@ export default function CourseDetail() {
 
   if (!currentCourse) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded-xl" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-44 rounded" />
+            <Skeleton className="h-4 w-56 rounded" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <SkeletonStatCard key={i} />
+          ))}
+        </div>
+
+        <div className="glass-card rounded-2xl p-4 space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-8 w-24 rounded-lg" />
+            ))}
+          </div>
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <SkeletonListItem key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
@@ -322,11 +348,11 @@ export default function CourseDetail() {
   if (quizAttempts.length > 0) {
     const dates = quizAttempts.map(a => new Date(a.attemptedAt).toISOString().split('T')[0])
     const uniqueDates = [...new Set(dates)].sort().reverse()
-    
+
     if (uniqueDates.length > 0) {
       const today = new Date().toISOString().split('T')[0]
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
-      
+
       if (uniqueDates[0] === today || uniqueDates[0] === yesterday) {
         studyStreak = 1
         let current = new Date(uniqueDates[0])
@@ -346,8 +372,8 @@ export default function CourseDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.push('/app/courses')}>
+      <div className="flex items-center gap-4 animate-fade-in">
+        <Button variant="ghost" size="icon" onClick={() => router.push('/app/courses')} className="rounded-xl">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
@@ -357,33 +383,31 @@ export default function CourseDetail() {
       </div>
 
       {/* ── Stats Row ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '0.05s' }}>
         <Card>
           <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-            <FileText className="h-8 w-8 mx-auto text-blue-500 mb-2" />
+            <div className="h-10 w-10 rounded-xl bg-[hsl(var(--accent-blue))]/10 flex items-center justify-center mb-2"><FileText className="h-5 w-5 text-[hsl(var(--accent-blue))]" /></div>
             <p className="text-2xl font-bold">{notes.length}</p>
             <p className="text-sm text-muted-foreground">Notes</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-            <LayoutGrid className="h-8 w-8 mx-auto text-purple-500 mb-2" />
+            <div className="h-10 w-10 rounded-xl bg-[hsl(var(--accent-purple))]/10 flex items-center justify-center mb-2"><LayoutGrid className="h-5 w-5 text-[hsl(var(--accent-purple))]" /></div>
             <p className="text-2xl font-bold">{flashcards.length}</p>
             <p className="text-sm text-muted-foreground">Flashcards</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-            <Brain className="h-8 w-8 mx-auto text-green-500 mb-2" />
+            <div className="h-10 w-10 rounded-xl bg-[hsl(var(--accent-green))]/10 flex items-center justify-center mb-2"><Brain className="h-5 w-5 text-[hsl(var(--accent-green))]" /></div>
             <p className="text-2xl font-bold">{quizzes.length}</p>
             <p className="text-sm text-muted-foreground">Quizzes</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-            <div className="flex justify-center mb-2">
-              <ProgressRing percent={overallPercent} />
-            </div>
+            <div className="flex justify-center mb-2"><ProgressRing percent={overallPercent} /></div>
             <p className="text-sm text-muted-foreground">Progress</p>
           </CardContent>
         </Card>
@@ -506,7 +530,7 @@ export default function CourseDetail() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 text-blue-500 shrink-0" />
+                  <FileText className="h-5 w-5 text-[hsl(var(--accent-blue))] shrink-0" />
                   <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">Notes Progress</p>
                     <p className="font-semibold">{completedSections} of {totalSections} sections</p>
@@ -516,34 +540,34 @@ export default function CourseDetail() {
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-4 h-full flex items-center">
                 <div className="flex items-center gap-3">
-                  <Brain className="h-5 w-5 text-green-500 shrink-0" />
+                  <Brain className="h-6 w-6 text-[hsl(var(--accent-green))] shrink-0" />
                   <div>
                     <p className="text-xs text-muted-foreground">Quiz Average</p>
-                    <p className="font-semibold">{quizAttempts.length > 0 ? `${avgQuizScore}%` : '—'}</p>
+                    <p className="text-2xl font-bold">{quizAttempts.length > 0 ? `${avgQuizScore}%` : '—'}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-4 h-full flex items-center">
                 <div className="flex items-center gap-3">
-                  <LayoutGrid className="h-5 w-5 text-purple-500 shrink-0" />
+                  <LayoutGrid className="h-6 w-6 text-[hsl(var(--accent-purple))] shrink-0" />
                   <div>
                     <p className="text-xs text-muted-foreground">Flashcards</p>
-                    <p className="font-semibold">{flashcardsStudied} cards</p>
+                    <p className="text-2xl font-bold">{flashcardsStudied} <span className="text-base font-normal text-muted-foreground">cards</span></p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-4 h-full flex items-center">
                 <div className="flex items-center gap-3">
-                  <Flame className="h-5 w-5 text-orange-500 shrink-0" />
+                  <Flame className="h-6 w-6 text-[hsl(var(--accent-amber))] shrink-0" />
                   <div>
                     <p className="text-xs text-muted-foreground">Study Streak</p>
-                    <p className="font-semibold">{studyStreak > 0 ? `${studyStreak} days` : '—'}</p>
+                    <p className="text-2xl font-bold">{studyStreak > 0 ? <>{studyStreak} <span className="text-base font-normal text-muted-foreground">days</span></> : '—'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -554,7 +578,7 @@ export default function CourseDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="h-5 w-5 text-blue-500" />
+                <FileText className="h-5 w-5 text-[hsl(var(--accent-blue))]" />
                 Notes Progress
               </CardTitle>
             </CardHeader>
@@ -588,7 +612,7 @@ export default function CourseDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-green-500" />
+                <BarChart3 className="h-5 w-5 text-[hsl(var(--accent-green))]" />
                 Quiz Score History
               </CardTitle>
             </CardHeader>
@@ -600,7 +624,7 @@ export default function CourseDetail() {
                     {quizAttempts.slice(0, 15).reverse().map((a, i) => {
                       const barColor =
                         a.percent >= 80 ? 'bg-green-500' :
-                        a.percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                          a.percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'
                       return (
                         <div key={a.id} className="flex-1 max-w-[40px] flex flex-col items-center justify-end gap-1 h-full pt-4" title={`${a.quizTitle}: ${a.percent}%`}>
                           <span className="text-[10px] text-muted-foreground font-medium">{Math.min(a.percent, 100)}%</span>
@@ -618,7 +642,7 @@ export default function CourseDetail() {
                     {quizAttempts.map((a) => {
                       const scoreColor = a.percent >= 80 ? 'text-green-500' : a.percent >= 50 ? 'text-yellow-500' : 'text-red-500'
                       return (
-                        <div key={a.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                        <div key={a.id} className="flex items-center justify-between p-3 rounded-xl glass-subtle hover:bg-white/[0.04] transition-all duration-250">
                           <div className="flex items-center gap-3 min-w-0">
                             <CheckCircle className={`h-4 w-4 shrink-0 ${scoreColor}`} />
                             <p className="text-sm font-medium truncate">{a.quizTitle}</p>
@@ -648,7 +672,7 @@ export default function CourseDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Target className="h-5 w-5 text-red-500" />
+                <Target className="h-5 w-5 text-[hsl(var(--accent-red))]" />
                 Weak Areas
               </CardTitle>
             </CardHeader>
@@ -670,7 +694,7 @@ export default function CourseDetail() {
                       return (
                         <div
                           key={w.id}
-                          className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
+                          className="flex items-center justify-between p-3 rounded-xl glass-subtle"
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <span>{indicator.emoji}</span>
@@ -744,7 +768,7 @@ export default function CourseDetail() {
 function MaterialList({ materials, type }: { materials: any[]; type: string }) {
   if (materials.length === 0) {
     return (
-      <Card className="py-8">
+      <Card className="py-8 animate-fade-in">
         <CardContent className="text-center text-muted-foreground">
           No {type} generated yet. Upload a document to create study materials.
         </CardContent>
@@ -754,15 +778,15 @@ function MaterialList({ materials, type }: { materials: any[]; type: string }) {
 
   return (
     <div className="grid md:grid-cols-2 gap-4">
-      {materials.map((material) => (
+      {materials.map((material, i) => (
         <Link key={material.id} href={`/app/${type}/${material.id}`}>
-          <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+          <Card className={`cursor-pointer group animate-fade-in stagger-${Math.min(i + 1, 6)}`}>
             <CardContent className="p-4 flex items-center justify-between">
               <div>
                 <p className="font-medium">{material.content?.title || `${type} #${material.id}`}</p>
                 <p className="text-sm text-muted-foreground">{new Date(material.generatedAt).toLocaleDateString()}</p>
               </div>
-              <Eye className="h-5 w-5 text-muted-foreground" />
+              <Eye className="h-5 w-5 text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity" />
             </CardContent>
           </Card>
         </Link>

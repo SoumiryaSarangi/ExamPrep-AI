@@ -8,6 +8,7 @@ import { generateSectionNotes } from '@/lib/ai/aiService'
 import ReactMarkdown from 'react-markdown'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { SelectionMenu } from '@/components/ui/selection-menu'
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,6 +22,8 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import { useTextScramble } from '@/hooks/useTextScramble'
+import { useTextSelection } from '@/hooks/useTextSelection'
 import type { Section } from '@/lib/parsers/textSplitter'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -60,6 +63,18 @@ export default function Notes() {
   const inFlightRef   = useRef<Set<number>>(new Set())
   // Guard so the auto-generate on first load only fires once
   const autoStartedRef = useRef(false)
+  const markdownRef = useRef<HTMLDivElement>(null)
+  const selection = useTextSelection(markdownRef)
+
+  // Compute values for useTextScramble safely before early returns
+  const _content = currentMaterial?.content as SectionedNotesContent | undefined
+  const _sectionTitle = _content?.sections?.[currentSectionIndex]?.title || 'this section'
+  const _currentMarkdown = _content?.sections?.length ? generatedSections[currentSectionIndex] : undefined
+  const _scrambleActive = generating && _currentMarkdown === undefined
+  const scrambledText = useTextScramble(
+    `AI is studying "${_sectionTitle}" for you...`,
+    { active: _scrambleActive }
+  )
 
   // ── Load material ───────────────────────────
   useEffect(() => {
@@ -304,7 +319,7 @@ export default function Notes() {
           <div style="width: 60px; height: 2px; background: #1a1a2e; margin: 28px auto;"></div>
           <div style="font-family: Georgia, serif; font-size: 15px; color: #444; margin-top: 28px;">Created by: <strong style="color: #111;">${authorName}</strong></div>
           <div style="font-family: Georgia, serif; font-size: 13px; color: #666; margin-top: 6px;">Generated on ${dateStr}</div>
-          <div style="font-family: Arial, sans-serif; font-size: 11px; color: #999; margin-top: 48px; letter-spacing: 0.5px;">PrepMind AI</div>
+          <div style="font-family: Arial, sans-serif; font-size: 11px; color: #999; margin-top: 48px; letter-spacing: 0.5px;">SenseiAI</div>
         </div>
       `
       container.appendChild(cover)
@@ -432,6 +447,24 @@ export default function Notes() {
     }
   }
 
+  const handleExplain = async () => {
+    if (!selection.text) return
+    selection.dismiss()
+    toast({ title: 'Explaining...', type: 'success' })
+  }
+
+  const handleMakeFlashcard = async () => {
+    if (!selection.text) return
+    selection.dismiss()
+    toast({ title: 'Creating flashcard...', type: 'success' })
+  }
+
+  const handleSummarize = async () => {
+    if (!selection.text) return
+    selection.dismiss()
+    toast({ title: 'Summarizing...', type: 'success' })
+  }
+
   // ─────────────────────────────────────────────
   // Loading state
   // ─────────────────────────────────────────────
@@ -444,6 +477,8 @@ export default function Notes() {
   }
 
   const content = currentMaterial.content as SectionedNotesContent
+  const sectionTitle = content?.sections?.[currentSectionIndex]?.title || 'this section'
+  const currentMarkdown = content?.sections?.length ? generatedSections[currentSectionIndex] : undefined
 
   // ─────────────────────────────────────────────
   // Legacy: material has no sections (generated before this feature)
@@ -457,7 +492,6 @@ export default function Notes() {
   // ─────────────────────────────────────────────
   const totalSections = content.sections.length
   const currentSection = content.sections[currentSectionIndex]
-  const currentMarkdown = generatedSections[currentSectionIndex]
   const generatedCount = Object.keys(generatedSections).length
 
   const progressPercent = totalSections > 0 ? Math.round((generatedCount / totalSections) * 100) : 0
@@ -465,9 +499,9 @@ export default function Notes() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* ── Header ── */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-3 animate-fade-in">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()} title="Go back">
+          <Button variant="ghost" size="icon" onClick={() => router.back()} title="Go back" className="rounded-xl">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -533,33 +567,33 @@ export default function Notes() {
           </div>
 
           {/* Overall progress bar */}
-          <div className="mt-3 w-full bg-muted rounded-full h-1.5 overflow-hidden">
-            <div
-              className="h-full bg-primary rounded-full transition-all duration-500"
-              style={{ width: `${progressPercent}%` }}
-            />
+          <div className="mt-6 p-4 glass-subtle rounded-xl">
+            <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2 text-right">{progressPercent}% complete</p>
           </div>
-          <p className="text-xs text-muted-foreground mt-1 text-right">{progressPercent}% complete</p>
         </CardContent>
       </Card>
 
       {/* ── Notes Content Card ── */}
-      <Card className="min-h-[400px]">
+      <Card className="min-h-[400px] animate-fade-in" style={{ animationDelay: '0.1s' }}>
         <CardContent className="p-8">
           {generating && currentMarkdown === undefined ? (
             // First-time generation loading state
             <div className="flex flex-col items-center justify-center py-16 gap-4 text-muted-foreground">
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
               <div className="text-center">
-                <p className="font-medium text-foreground">Generating detailed notes…</p>
-                <p className="text-sm mt-1">
-                  AI is studying <span className="text-primary font-medium">{currentSection.title}</span> for you
-                </p>
+                <p className="font-medium text-foreground">Generating detailed notes...</p>
+                <p className="text-sm mt-1 font-mono text-primary/80">{scrambledText}</p>
               </div>
             </div>
           ) : currentMarkdown ? (
             // Render generated markdown
-            <div className="markdown-content prose prose-invert max-w-none">
+            <div ref={markdownRef} className="markdown-content prose prose-invert max-w-none">
               <div className="flex items-center gap-2 mb-6 pb-4 border-b border-border">
                 <FileText className="h-5 w-5 text-primary shrink-0" />
                 <span className="text-lg font-semibold text-foreground">{currentSection.title}</span>
@@ -584,6 +618,14 @@ export default function Notes() {
               </Button>
             </div>
           )}
+          <SelectionMenu
+            x={selection.x}
+            y={selection.y}
+            visible={selection.visible}
+            onExplain={handleExplain}
+            onFlashcard={handleMakeFlashcard}
+            onSummarize={handleSummarize}
+          />
         </CardContent>
       </Card>
 

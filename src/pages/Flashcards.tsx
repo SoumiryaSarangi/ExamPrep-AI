@@ -71,7 +71,7 @@ function ProgressRing({ percent, size = 120, stroke = 8 }: { percent: number; si
   const radius = (size - stroke) / 2
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (percent / 100) * circumference
-  const color = percent >= 80 ? '#22c55e' : percent >= 50 ? '#eab308' : '#ef4444'
+  const color = percent >= 80 ? 'hsl(var(--accent-green))' : percent >= 50 ? 'hsl(var(--accent-amber))' : 'hsl(var(--accent-red))'
 
   return (
     <svg width={size} height={size} className="transform -rotate-90">
@@ -333,7 +333,7 @@ export default function Flashcards() {
   // ─────────────────────────────────────────────
   if ((!cards || cards.length === 0) && !generating) {
     return (
-      <div className="max-w-lg mx-auto py-16">
+      <div className="max-w-lg mx-auto py-16 animate-fade-in">
         <Card className="border-dashed">
           <CardContent className="p-10 flex flex-col items-center text-center gap-5">
             {genError ? (
@@ -352,14 +352,14 @@ export default function Flashcards() {
               </>
             ) : (
               <>
-                <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center">
-                  <LayoutGrid className="h-8 w-8 text-purple-500" />
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center animate-float">
+                  <LayoutGrid className="h-8 w-8 text-primary" />
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold mb-1">No flashcards generated yet</h2>
                   <p className="text-sm text-muted-foreground">Click below to generate 30 flashcards from your document.</p>
                 </div>
-                <Button onClick={handleGenerate} size="lg" className="gap-2 bg-purple-600 hover:bg-purple-700">
+                <Button onClick={handleGenerate} size="lg" className="gap-2">
                   <Sparkles className="h-4 w-4" /> Generate Flashcards
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => router.back()}>Go Back</Button>
@@ -379,7 +379,7 @@ export default function Flashcards() {
       <div className="max-w-lg mx-auto py-16">
         <Card>
           <CardContent className="p-10 flex flex-col items-center text-center gap-5">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center animate-glow-pulse">
               <Loader2 className="h-8 w-8 text-primary animate-spin" />
             </div>
             <div>
@@ -444,9 +444,9 @@ export default function Flashcards() {
   return (
     <div className="max-w-2xl mx-auto space-y-6" tabIndex={0}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between animate-fade-in">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-xl">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -480,7 +480,7 @@ export default function Flashcards() {
             </CardContent>
           </Card>
 
-          <Card className="flip-card-back absolute inset-0 bg-primary/5">
+          <Card className="flip-card-back absolute inset-0 border-primary/20">
             <CardContent className="h-full flex flex-col items-center justify-center p-8">
               <DifficultyBadge difficulty={activeCard?.difficulty} />
               <div className="text-center mt-3">

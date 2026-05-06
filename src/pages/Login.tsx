@@ -53,13 +53,15 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <Link href="/" className="inline-flex items-center justify-center gap-2 mb-4">
-            <GraduationCap className="h-10 w-10 text-primary" />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background dot-pattern">
+      <Card className="w-full max-w-md animate-fade-in-scale">
+        <CardHeader className="text-center pb-2">
+          <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6">
+            <div className="h-12 w-12 rounded-2xl bg-primary/15 flex items-center justify-center animate-glow-pulse">
+              <GraduationCap className="h-7 w-7 text-primary" />
+            </div>
           </Link>
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
+          <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
           <CardDescription>Sign in to continue studying</CardDescription>
         </CardHeader>
         <CardContent>
@@ -103,7 +105,7 @@ export default function Login() {
 
           <div className="mt-6 text-center text-sm">
             <span className="text-muted-foreground">Don&apos;t have an account? </span>
-            <Link href="/register" className="text-primary hover:underline">
+            <Link href="/register" className="text-primary hover:underline font-medium">
               Sign up
             </Link>
           </div>

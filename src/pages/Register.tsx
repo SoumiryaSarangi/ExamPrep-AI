@@ -53,7 +53,7 @@ export default function Register() {
           })
         } else {
           // Immediate login — redirect to app
-          toast({ title: 'Account created!', description: 'Welcome to ExamHelper AI', type: 'success' })
+          toast({ title: 'Account created!', description: 'Welcome to SenseiAI', type: 'success' })
           router.push('/app')
         }
       } else {
@@ -74,22 +74,22 @@ export default function Register() {
   // ── Email confirmation sent state ────────────────────────────────────────────
   if (emailConfirmationSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <Card className="w-full max-w-md text-center">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background dot-pattern">
+        <Card className="w-full max-w-md text-center animate-fade-in-scale">
           <CardHeader>
             <div className="flex justify-center mb-4">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <div className="h-16 w-16 rounded-2xl bg-primary/15 flex items-center justify-center animate-glow-pulse">
                 <Mail className="h-8 w-8 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl">Check your inbox</CardTitle>
+            <CardTitle className="text-2xl font-bold">Check your inbox</CardTitle>
             <CardDescription>
-              We sent a confirmation link to <strong>{email}</strong>
+              We sent a confirmation link to <strong className="text-foreground">{email}</strong>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-start gap-3 p-4 bg-muted rounded-lg text-left">
-              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+            <div className="flex items-start gap-3 p-4 rounded-xl glass-subtle border border-[hsl(var(--accent-green))]/20 text-left">
+              <CheckCircle className="h-5 w-5 text-[hsl(var(--accent-green))] mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium">Account created successfully!</p>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -100,7 +100,7 @@ export default function Register() {
             <p className="text-xs text-muted-foreground">
               Didn&apos;t get the email? Check your spam folder or{' '}
               <button
-                className="text-primary hover:underline"
+                className="text-primary hover:underline font-medium"
                 onClick={() => {
                   setEmailConfirmationSent(false)
                   setPassword('')
@@ -121,13 +121,15 @@ export default function Register() {
 
   // ── Registration form ────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <Link href="/" className="inline-flex items-center justify-center gap-2 mb-4">
-            <GraduationCap className="h-10 w-10 text-primary" />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background dot-pattern">
+      <Card className="w-full max-w-md animate-fade-in-scale">
+        <CardHeader className="text-center pb-2">
+          <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6">
+            <div className="h-12 w-12 rounded-2xl bg-primary/15 flex items-center justify-center animate-glow-pulse">
+              <GraduationCap className="h-7 w-7 text-primary" />
+            </div>
           </Link>
-          <CardTitle className="text-2xl">Create Account</CardTitle>
+          <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
           <CardDescription>Start your AI-powered study journey</CardDescription>
         </CardHeader>
         <CardContent>
@@ -187,7 +189,7 @@ export default function Register() {
 
           <div className="mt-6 text-center text-sm">
             <span className="text-muted-foreground">Already have an account? </span>
-            <Link href="/login" className="text-primary hover:underline">
+            <Link href="/login" className="text-primary hover:underline font-medium">
               Sign in
             </Link>
           </div>

@@ -41,6 +41,11 @@ const config: Config = {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
+          green: "hsl(var(--accent-green))",
+          red: "hsl(var(--accent-red))",
+          amber: "hsl(var(--accent-amber))",
+          purple: "hsl(var(--accent-purple))",
+          blue: "hsl(var(--accent-blue))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -55,6 +60,14 @@ const config: Config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      spacing: {
+        'sidebar': 'var(--sidebar-width)',
+        'sidebar-collapsed': 'var(--sidebar-collapsed-width)',
+      },
+      transitionDuration: {
+        '250': '250ms',
+        '350': '350ms',
       },
       keyframes: {
         "accordion-down": {
@@ -73,12 +86,37 @@ const config: Config = {
           "0%": { transform: "rotateY(180deg)" },
           "100%": { transform: "rotateY(0deg)" },
         },
+        "fade-in": {
+          from: { opacity: "0", transform: "translateY(10px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in-scale": {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        "slide-in-left": {
+          from: { opacity: "0", transform: "translateX(-18px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
+        "slide-in-right": {
+          from: { opacity: "0", transform: "translateX(18px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 0 0 hsl(var(--primary) / 0)" },
+          "50%": { boxShadow: "0 0 24px 4px hsl(var(--primary) / 0.18)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "flip": "flip 0.6s ease-in-out",
         "flip-back": "flip-back 0.6s ease-in-out",
+        "fade-in": "fade-in 0.45s ease-out both",
+        "fade-in-scale": "fade-in-scale 0.35s ease-out both",
+        "slide-in-left": "slide-in-left 0.35s ease-out both",
+        "slide-in-right": "slide-in-right 0.35s ease-out both",
+        "glow-pulse": "glow-pulse 2.5s ease-in-out infinite",
       },
     },
   },

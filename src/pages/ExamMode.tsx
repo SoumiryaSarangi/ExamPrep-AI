@@ -241,9 +241,11 @@ export default function ExamMode() {
     if (!questionOptions.includes(maxQ) && maxQ < 30) questionOptions.push(maxQ)
 
     return (
-      <div className="max-w-xl mx-auto py-8 space-y-6">
+      <div className="max-w-xl mx-auto py-8 space-y-6 animate-fade-in">
         <div className="text-center">
-          <Shield className="h-12 w-12 mx-auto text-primary mb-3" />
+          <div className="h-14 w-14 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-3 animate-glow-pulse">
+            <Shield className="h-7 w-7 text-primary" />
+          </div>
           <h1 className="text-2xl font-bold">Exam Mode</h1>
           <p className="text-muted-foreground mt-1">
             {currentMaterial.content?.title || 'Quiz'}
@@ -310,12 +312,12 @@ export default function ExamMode() {
         </Card>
 
         {/* Rules */}
-        <Card className="border-yellow-500/30 bg-yellow-500/5">
+        <Card className="border-[hsl(var(--accent-amber))]/20 bg-[hsl(var(--accent-amber))]/5">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 text-[hsl(var(--accent-amber))] shrink-0 mt-0.5" />
               <div className="text-sm space-y-1">
-                <p className="font-medium text-yellow-500">Exam Rules</p>
+                <p className="font-medium text-[hsl(var(--accent-amber))]">Exam Rules</p>
                 <ul className="text-muted-foreground space-y-0.5">
                   <li>• Once started, the timer cannot be paused</li>
                   <li>• Each question is worth 1 mark</li>
@@ -377,10 +379,10 @@ export default function ExamMode() {
                 return (
                   <button
                     key={idx}
-                    className={`w-full p-4 text-left rounded-lg border transition-colors ${
+                    className={`w-full p-4 text-left rounded-xl border transition-all duration-250 ${
                       isSelected
                         ? 'border-primary bg-primary/10'
-                        : 'border-muted hover:border-primary/50'
+                        : 'border-muted hover:border-primary/40'
                     }`}
                     onClick={() => selectAnswer(idx)}
                   >
@@ -498,19 +500,19 @@ export default function ExamMode() {
 
             {/* Score */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="text-center p-4 rounded-lg bg-muted/30">
+              <div className="text-center p-4 rounded-xl glass-subtle">
                 <p className="text-3xl font-bold">{correctCount}/{total}</p>
                 <p className="text-xs text-muted-foreground mt-1">Score</p>
               </div>
-              <div className="text-center p-4 rounded-lg bg-muted/30">
+              <div className="text-center p-4 rounded-xl glass-subtle">
                 <p className={`text-3xl font-bold ${grade.color}`}>{percent}%</p>
                 <p className="text-xs text-muted-foreground mt-1">Percentage</p>
               </div>
-              <div className="text-center p-4 rounded-lg bg-muted/30">
+              <div className="text-center p-4 rounded-xl glass-subtle">
                 <p className={`text-3xl font-bold ${grade.color}`}>{grade.letter}</p>
                 <p className="text-xs text-muted-foreground mt-1">{grade.label}</p>
               </div>
-              <div className="text-center p-4 rounded-lg bg-muted/30">
+              <div className="text-center p-4 rounded-xl glass-subtle">
                 <p className="text-3xl font-bold">{formatTime(timeTaken)}</p>
                 <p className="text-xs text-muted-foreground mt-1">Time Taken</p>
               </div>
@@ -558,12 +560,12 @@ export default function ExamMode() {
               return (
                 <div
                   key={idx}
-                  className={`p-4 rounded-lg border ${
+                  className={`p-4 rounded-xl border ${
                     wasUnanswered
-                      ? 'border-muted bg-muted/10'
+                      ? 'border-muted glass-subtle'
                       : isCorrect
-                      ? 'border-green-500/30 bg-green-500/5'
-                      : 'border-red-500/30 bg-red-500/5'
+                      ? 'border-[hsl(var(--accent-green))]/30 bg-[hsl(var(--accent-green))]/5'
+                      : 'border-[hsl(var(--accent-red))]/30 bg-[hsl(var(--accent-red))]/5'
                   }`}
                 >
                   <div className="flex items-start gap-3">

@@ -25,12 +25,12 @@ export default function Diagrams() {
       startOnLoad: false,
       theme: 'dark',
       themeVariables: {
-        primaryColor: '#6366f1',
+        primaryColor: '#d97706',
         primaryTextColor: '#fff',
-        primaryBorderColor: '#8b5cf6',
+        primaryBorderColor: '#b45309',
         lineColor: '#6b7280',
-        secondaryColor: '#1e1e2e',
-        tertiaryColor: '#2d2d3f',
+        secondaryColor: '#1a1d23',
+        tertiaryColor: '#22262e',
       },
     })
   }, [])
@@ -111,9 +111,9 @@ export default function Diagrams() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between animate-fade-in">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-xl">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -149,7 +149,7 @@ export default function Diagrams() {
             {availableTabs.map((tab) => (
               <TabsContent key={tab} value={tab}>
                 <div
-                  className="overflow-auto bg-muted/30 rounded-lg p-4 min-h-[400px] flex items-center justify-center"
+                  className="overflow-auto glass-subtle rounded-xl p-6 min-h-[400px] flex items-center justify-center"
                   style={{ transform: `scale(${zoom})`, transformOrigin: 'center center' }}
                 >
                   <div dangerouslySetInnerHTML={{ __html: renderedDiagrams[tab] || '' }} className="mermaid-diagram" />
