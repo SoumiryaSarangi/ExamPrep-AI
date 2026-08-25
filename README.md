@@ -13,7 +13,7 @@
 
 ## Overview
 
-**SenseiAI** is a comprehensive, local-first web application engineered specifically to help students study smarter, not harder. By simply uploading your PDF or PowerPoint lecture slides, SenseiAI leverages state-of-the-art Large Language Models (LLaMA 3.3 70B via Groq) to automatically generate highly structured, exam-ready study materials in seconds. 
+**SenseiAI** is a comprehensive, local-first web application engineered specifically to help students study smarter, not harder. By simply uploading your PDF or PowerPoint lecture slides, SenseiAI leverages state-of-the-art Large Language Models (GPT-OSS 20B via Groq) to automatically generate highly structured, exam-ready study materials in seconds. 
 
 Designed with a premium dark-mode aesthetic and engineered for privacy and speed, SenseiAI stores your personal study data locally in your browser via IndexedDB.
 
@@ -44,7 +44,7 @@ Designed with a premium dark-mode aesthetic and engineered for privacy and speed
 | UI Components | [Radix UI](https://www.radix-ui.com/) + [Tailwind CSS](https://tailwindcss.com/) (shadcn/ui pattern) |
 | State Management | [Zustand](https://zustand-demo.pmnd.rs/) |
 | Local Storage | [Dexie](https://dexie.org/) (IndexedDB) |
-| AI Providers | [Groq](https://console.groq.com/) (LLaMA 3.3 70B) |
+| AI Providers | [Groq](https://console.groq.com/) (GPT-OSS 20B) |
 | Document Parsing | [PDF.js](https://mozilla.github.io/pdf.js/), [JSZip](https://stuk.github.io/jszip/) |
 | Visualizations | [Mermaid](https://mermaid.js.org/), [Recharts](https://recharts.org/) |
 | Authentication | [Supabase](https://supabase.com/) (optional) |

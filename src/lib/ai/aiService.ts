@@ -90,7 +90,7 @@ async function groqGenerate(prompt: string, keys: string[], label: string): Prom
     const client = new Groq({ apiKey, dangerouslyAllowBrowser: true })
     const completion = await client.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-20b',
       temperature: 0.7,
       max_tokens: 4096,
     })
@@ -104,9 +104,9 @@ async function groqGenerateFlashcards(prompt: string, keys: string[], label: str
     const client = new Groq({ apiKey, dangerouslyAllowBrowser: true })
     const completion = await client.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-20b',
       temperature: 0.7,
-      max_tokens: 8000,
+      max_tokens: 4000,
     })
     return completion.choices[0]?.message?.content ?? ''
   })
@@ -451,7 +451,7 @@ function buildDemoMaterials(filename: string) {
         title: `Quiz: ${filename}`,
         questions: [
           { question: 'What file types can you upload?', options: ['Only PDF', 'Only PPTX', 'Both PDF and PPTX', 'None'], correct: 2, explanation: 'Both PDF and PPTX are supported.' },
-          { question: 'Which AI model is used?', options: ['GPT-4', 'Gemini', 'LLaMA 3.3 70B', 'Claude'], correct: 2, explanation: 'LLaMA 3.3 70B via Groq is used for all generation.' },
+          { question: 'Which AI model is used?', options: ['GPT-4', 'Gemini', 'GPT-OSS 20B', 'Claude'], correct: 2, explanation: 'GPT-OSS 20B via Groq is used for all generation.' },
         ],
       },
     },

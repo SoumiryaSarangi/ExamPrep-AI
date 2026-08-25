@@ -26,7 +26,7 @@ ExamHelper AI is a **client-heavy** Next.js application. The browser handles nea
 - **Routing and rendering** — Next.js App Router with React 18
 - **State management** — Zustand stores for auth, courses, documents, and materials
 - **Persistence** — IndexedDB via Dexie (all study data lives in the browser)
-- **AI generation** — Browser-side API calls to Groq (LLaMA 3.3 70B)
+- **AI generation** — Browser-side API calls to Groq (GPT-OSS 20B)
 - **Authentication** — Optional Supabase auth with demo-user fallback
 
 There is no custom backend server. The app communicates directly with third-party APIs from the client.
@@ -76,7 +76,7 @@ Activated when at least one set of API keys is present in `.env.local`.
 | Aspect | Behavior |
 |---|---|
 | Authentication | Supabase session-backed auth (email + password) |
-| AI generation | Groq LLaMA 3.3 70B with key-pool rotation |
+| AI generation | Groq GPT-OSS 20B with key-pool rotation |
 | Storage | Local IndexedDB (same as demo mode) |
 
 > **Note:** Even in configured mode, all study data is stored locally. Supabase is used only for authentication, not data persistence.
