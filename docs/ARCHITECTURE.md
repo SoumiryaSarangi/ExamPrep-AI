@@ -214,6 +214,7 @@ Managed by Dexie (IndexedDB) in `src/lib/db.ts`. Currently at schema version 3.
 | v1 | Initial schema (courses, documents, materials, flashcards, quizAttempts, studySessions) |
 | v2 | Added `sections` field to `documents` for section-by-section note generation |
 | v3 | Added `weakAreas` table for per-topic quiz performance tracking |
+| v4 | Added compound index `[courseId+topic]` to `weakAreas` table |
 
 ---
 

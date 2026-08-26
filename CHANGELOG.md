@@ -22,7 +22,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - **Supabase authentication** — Optional email/password auth with demo-user fallback
 - **PDF and PPTX parsing** — Client-side text extraction using PDF.js and JSZip
 - **Python PPTX preprocessor** — Standalone CLI script for offline extraction of large PowerPoint files
-- **Dark theme UI** — Linear-style dark design with purple accent colors
+- **Dark theme UI** — Linear-style dark design with amber primary and purple accent colors
 - **Course organization** — Group documents and materials under named courses
 - **Progress dashboard** — Study statistics with charts (Recharts)
 

@@ -226,7 +226,7 @@ export default function ExamMode() {
       <div className="max-w-2xl mx-auto text-center py-12">
         <Target className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
         <h2 className="text-xl font-semibold mb-2">No questions available</h2>
-        <p className="text-muted-foreground mb-4">This quiz doesn't have any questions yet.</p>
+        <p className="text-muted-foreground mb-4">This quiz doesn&apos;t have any questions yet.</p>
         <Button onClick={() => router.back()}>Go Back</Button>
       </div>
     )

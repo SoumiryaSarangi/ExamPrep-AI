@@ -109,6 +109,17 @@ class ExamHelperDB extends Dexie {
       studySessions: '++id, date, duration, cardsReviewed, quizzesTaken',
       weakAreas: '++id, courseId, topic, wrongCount, totalAttempts, lastUpdated',
     })
+
+    // v4: adds compound index [courseId+topic] to weakAreas
+    this.version(4).stores({
+      courses: '++id, courseCode, courseName, semester, createdAt',
+      documents: '++id, courseId, filename, fileType, extractedText, sections, status, uploadedAt',
+      materials: '++id, documentId, type, content, generatedAt',
+      flashcards: '++id, materialId, front, back, difficulty, nextReview, repetitions, easeFactor',
+      quizAttempts: '++id, materialId, score, answers, attemptedAt',
+      studySessions: '++id, date, duration, cardsReviewed, quizzesTaken',
+      weakAreas: '++id, courseId, topic, wrongCount, totalAttempts, lastUpdated, [courseId+topic]',
+    })
   }
 }
 

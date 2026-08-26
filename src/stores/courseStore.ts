@@ -74,10 +74,18 @@ export const useCourseStore = create<CourseState>((set) => ({
   deleteCourse: async (id) => {
     try {
       await db.courses.delete(id)
+      await db.weakAreas.where('courseId').equals(id).delete()
+      
       // Also delete related documents and materials
       const docs = await db.documents.where('courseId').equals(id).toArray()
       for (const doc of docs) {
         if (doc.id !== undefined) {
+          const materials = await db.materials.where('documentId').equals(doc.id).toArray()
+          const materialIds = materials.map(m => m.id as number).filter(mid => mid !== undefined)
+          if (materialIds.length > 0) {
+            await db.flashcards.where('materialId').anyOf(materialIds).delete()
+            await db.quizAttempts.where('materialId').anyOf(materialIds).delete()
+          }
           await db.materials.where('documentId').equals(doc.id).delete()
         }
       }

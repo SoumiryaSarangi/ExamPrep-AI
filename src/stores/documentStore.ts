@@ -79,7 +79,13 @@ export const useDocumentStore = create<DocumentState>((set) => ({
 
   deleteDocument: async (id) => {
     try {
-      // Delete related materials first
+      // Delete related flashcards and quizAttempts first, then materials
+      const materials = await db.materials.where('documentId').equals(id).toArray()
+      const materialIds = materials.map(m => m.id as number).filter(mid => mid !== undefined)
+      if (materialIds.length > 0) {
+        await db.flashcards.where('materialId').anyOf(materialIds).delete()
+        await db.quizAttempts.where('materialId').anyOf(materialIds).delete()
+      }
       await db.materials.where('documentId').equals(id).delete()
       await db.documents.delete(id)
       
