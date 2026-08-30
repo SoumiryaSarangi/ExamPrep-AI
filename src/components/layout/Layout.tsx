@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { AccentPicker } from '@/components/ui/accent-picker'
 import { cn } from '@/utils/cn'
 
 const navItems = [
@@ -73,6 +74,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          <AccentPicker />
           <Button variant="ghost" size="icon" onClick={() => setMobileOpen((prev) => !prev)}>
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
@@ -173,11 +175,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           {/* ─── Bottom section ─── */}
           <div className="mt-auto shrink-0 border-t border-white/[0.06]">
-            {/* Theme toggle */}
-            <div className={cn('flex items-center px-3 py-2', collapsed ? 'justify-center' : 'justify-start')}>
-              <ThemeToggle collapsed={collapsed} className="hidden lg:flex" />
+            {/* Theme & Accent toggle */}
+            <div className={cn('flex items-center px-3 py-2 gap-2', collapsed ? 'flex-col justify-center' : 'justify-start')}>
+              <div className="hidden lg:flex items-center gap-2">
+                <ThemeToggle collapsed={collapsed} />
+                {!collapsed && <AccentPicker collapsed={false} />}
+              </div>
+              {collapsed && <AccentPicker collapsed={true} className="hidden lg:flex" />}
               {!collapsed && (
-                <span className="text-xs text-muted-foreground ml-2 hidden lg:inline">Toggle theme</span>
+                <span className="text-xs text-muted-foreground ml-2 hidden lg:inline">Theme & Accent</span>
               )}
             </div>
 

@@ -1,3 +1,5 @@
+@import 'katex/dist/katex.min.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -93,6 +95,19 @@
     --accent-purple: 263 60% 52%;
     --accent-blue: 217 68% 48%;
   }
+
+  /* ── Custom Accents ── */
+  .accent-teal { --primary: 172 70% 45%; --ring: 172 70% 45%; }
+  .light.accent-teal { --primary: 172 65% 36%; --ring: 172 65% 36%; }
+
+  .accent-cyan { --primary: 189 85% 50%; --ring: 189 85% 50%; }
+  .light.accent-cyan { --primary: 189 80% 40%; --ring: 189 80% 40%; }
+
+  .accent-magenta { --primary: 320 75% 55%; --ring: 320 75% 55%; }
+  .light.accent-magenta { --primary: 320 70% 45%; --ring: 320 70% 45%; }
+
+  .accent-red { --primary: 355 78% 55%; --ring: 355 78% 55%; }
+  .light.accent-red { --primary: 355 72% 46%; --ring: 355 72% 46%; }
 }
 
 @layer base {
