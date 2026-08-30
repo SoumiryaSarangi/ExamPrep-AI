@@ -93,7 +93,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className="text-3xl font-bold mt-1">{stat.value}</p>
+                  <p className="text-3xl font-bold mt-1 font-mono">{stat.value}</p>
                 </div>
                 <div className={`h-11 w-11 rounded-xl ${stat.bg} flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}>
                   <stat.icon className={`h-5 w-5 ${stat.color}`} />

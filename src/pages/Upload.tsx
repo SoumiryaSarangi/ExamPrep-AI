@@ -191,7 +191,7 @@ export default function UploadPage() {
         </Card>
       )}
 
-      <MagneticButton size="lg" className="w-full gap-2" intensity={6} onClick={processFiles} disabled={processing || files.length === 0 || !selectedCourse}>
+      <MagneticButton size="lg" className="w-full gap-2 animate-pulse-glow" intensity={6} onClick={processFiles} disabled={processing || files.length === 0 || !selectedCourse}>
         {processing ? (<><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</>) : (<><UploadIcon className="mr-2 h-5 w-5" /> Generate Study Materials</>)}
       </MagneticButton>
     </div>

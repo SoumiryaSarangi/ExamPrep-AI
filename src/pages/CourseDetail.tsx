@@ -382,7 +382,7 @@ export default function CourseDetail() {
             <p className="text-muted-foreground">{currentCourse.courseName}</p>
           </div>
         </div>
-        <Button asChild>
+        <Button asChild className="animate-pulse-glow">
           <Link href={`/app/courses/${courseId}/tutor`} className="gap-2">
             <Sparkles className="h-4 w-4" />
             Ask Course Tutor

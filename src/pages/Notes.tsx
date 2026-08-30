@@ -531,7 +531,7 @@ export default function Notes() {
             <span className="text-sm font-medium text-muted-foreground">
               Section {currentSectionIndex + 1} of {totalSections}
             </span>
-            <span className="text-sm font-medium text-primary">
+            <span className="text-sm font-medium text-primary font-mono">
               {currentSection.title}
             </span>
           </div>

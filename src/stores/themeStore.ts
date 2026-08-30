@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 type Theme = 'dark' | 'light'
-export type Accent = 'amber' | 'teal' | 'cyan' | 'magenta' | 'red'
+export type Accent = 'amber' | 'clarity' | 'focus' | 'ember'
 
 interface ThemeState {
   theme: Theme
@@ -24,11 +24,13 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   initialize: () => {
     if (get().initialized) return
 
+    const VALID_ACCENTS: Set<string> = new Set(['amber', 'clarity', 'focus', 'ember'])
+
     let saved: Theme | null = null
-    let savedAccent: Accent | null = null
+    let rawAccent: string | null = null
     try {
       saved = localStorage.getItem(STORAGE_KEY) as Theme | null
-      savedAccent = localStorage.getItem(ACCENT_STORAGE_KEY) as Accent | null
+      rawAccent = localStorage.getItem(ACCENT_STORAGE_KEY)
     } catch {}
 
     const preferred: Theme =
@@ -37,7 +39,11 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
         ? 'light'
         : 'dark')
 
-    const preferredAccent: Accent = savedAccent ?? 'amber'
+    // Validate stored accent — old values (teal/cyan/magenta/red) fall back to 'amber'
+    const preferredAccent: Accent =
+      rawAccent !== null && VALID_ACCENTS.has(rawAccent)
+        ? (rawAccent as Accent)
+        : 'amber'
 
     applyThemeClass(preferred)
     applyAccentClass(preferredAccent)

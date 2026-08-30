@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">SenseiAI</h1>
   <p align="center">
-    AI-powered study platform that transforms lecture slides into notes, flashcards, quizzes and exam practice — built for BTech students.
+    AI-powered study platform that transforms lecture slides into notes, flashcards, quizzes, exam practice, and a RAG-powered course tutor — built for BTech students.
     <br />
     <a href="docs/ARCHITECTURE.md"><strong>Architecture »</strong></a> ·
     <a href="docs/ENVIRONMENT.md"><strong>Environment Setup »</strong></a> ·
@@ -25,10 +25,14 @@ Designed with a premium dark-mode aesthetic and engineered for privacy and speed
 | | **Flashcards** — exactly 30 targeted cards with SM-2 spaced repetition scheduling |
 | | **Quizzes** — 15 rigorous multiple-choice questions with detailed explanations |
 | | **Exam Mode** — full-length timed practice exams simulating real test conditions |
+| | **Course Tutor** — conversational AI tutor that answers questions using only your own uploaded documents |
 
 ### Key Capabilities
 
 - **Section-by-section note generation** — documents are automatically split into logical sections; notes are generated independently per section for maximum quality and granular coverage.
+- **Course Tutor (RAG)** — ask questions about any course and get answers sourced exclusively from your uploaded documents. Uses client-side vector embeddings (`@huggingface/transformers`, no extra server or search API) to retrieve the most relevant passages, shows visible source citations on every grounded answer, understands conversational follow-up across the last several turns, and honestly responds "not covered in your materials" rather than guessing.
+- **Math rendering** — LaTeX equations in AI-generated content are rendered as properly typeset math (KaTeX) in both Notes and the Course Tutor, not as raw `$...$` text.
+- **Accent color picker** — a small in-app picker (next to the theme toggle) lets you switch the app's primary accent color between a few curated options without leaving the page.
 - **Spaced repetition** — flashcards use the proven SM-2 algorithm to schedule reviews at optimal intervals for maximum retention.
 - **Weak area tracking** — AI analyzes your quiz results per-topic, actively identifying your weakest subjects and creating targeted practice sessions.
 - **Exam mode** — timed, simulated practice exams designed to build testing speed and confidence.
@@ -45,7 +49,9 @@ Designed with a premium dark-mode aesthetic and engineered for privacy and speed
 | State Management | [Zustand](https://zustand-demo.pmnd.rs/) |
 | Local Storage | [Dexie](https://dexie.org/) (IndexedDB) |
 | AI Providers | [Groq](https://console.groq.com/) (GPT-OSS 20B) |
+| Client-side Embeddings | [@huggingface/transformers](https://huggingface.co/docs/transformers.js) (runs entirely in the browser — no server required) |
 | Document Parsing | [PDF.js](https://mozilla.github.io/pdf.js/), [JSZip](https://stuk.github.io/jszip/) |
+| Math Rendering | [KaTeX](https://katex.org/) via [remark-math](https://github.com/remarkjs/remark-math) + [rehype-katex](https://github.com/remarkjs/remark-math/tree/main/packages/rehype-katex) |
 | Visualizations | [Mermaid](https://mermaid.js.org/), [Recharts](https://recharts.org/) |
 | Authentication | [Supabase](https://supabase.com/) (optional) |
 
@@ -111,7 +117,7 @@ exam-helper-ai/
 │   │   └── app/                # /app/* (protected routes)
 │   │       ├── layout.tsx      # Auth guard + sidebar layout
 │   │       ├── page.tsx        # Dashboard
-│   │       ├── courses/        # Course list + detail
+│   │       ├── courses/        # Course list + detail + Course Tutor (/courses/[id]/tutor)
 │   │       ├── upload/         # Document upload
 │   │       ├── notes/          # Note viewer
 │   │       ├── flashcards/     # Flashcard study

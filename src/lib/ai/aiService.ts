@@ -468,11 +468,11 @@ Instructions:
 Answer:`
 
   const keysToUse = GROQ_TUTOR_KEYS.length > 0 ? GROQ_TUTOR_KEYS : GROQ_NOTES_KEYS
-  
+
   if (keysToUse.length > 0) {
     return groqGenerate(prompt, keysToUse, 'tutor')
   }
-  
+
   console.warn('[AI] No Groq keys for tutor or notes. Using demo mode.')
   return "This is a demo answer. The real answer is not available because no Groq API keys are configured."
 }
@@ -608,10 +608,10 @@ export function isAIConfigured(): boolean {
 
 export function getAIStatus() {
   return {
-    notesKeys:     GROQ_NOTES_KEYS.length,
+    notesKeys: GROQ_NOTES_KEYS.length,
     flashcardKeys: GROQ_FLASHCARD_KEYS.length,
-    quizKeys:      GROQ_QUIZ_KEYS.length,
-    tutorKeys:     GROQ_TUTOR_KEYS.length,
-    configured:    isAIConfigured(),
+    quizKeys: GROQ_QUIZ_KEYS.length,
+    tutorKeys: GROQ_TUTOR_KEYS.length,
+    configured: isAIConfigured(),
   }
 }

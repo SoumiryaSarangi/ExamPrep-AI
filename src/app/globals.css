@@ -311,16 +311,16 @@
 @keyframes pulse-glow {
   0%, 100% {
     opacity: 1;
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+    box-shadow: 0 0 8px hsl(var(--primary) / 0.2);
   }
   50% {
-    opacity: 0.7;
-    box-shadow: 0 0 40px hsl(var(--primary) / 0.8);
+    opacity: 1;
+    box-shadow: 0 0 16px hsl(var(--primary) / 0.35);
   }
 }
 
 .animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+  animation: pulse-glow 3s ease-in-out infinite;
 }
 
 /* ═══════════════════════════════════════════════
@@ -399,14 +399,11 @@
 /* ═══════════════════════════════════════════════
    Custom Accents (Unlayered for max specificity)
    ═══════════════════════════════════════════════ */
-.accent-teal { --primary: 172 70% 45%; --ring: 172 70% 45%; }
-.light.accent-teal { --primary: 172 65% 36%; --ring: 172 65% 36%; }
+.accent-clarity { --primary: 188 78% 48%; --ring: 188 78% 48%; }
+.light.accent-clarity { --primary: 188 75% 38%; --ring: 188 75% 38%; }
 
-.accent-cyan { --primary: 189 85% 50%; --ring: 189 85% 50%; }
-.light.accent-cyan { --primary: 189 80% 40%; --ring: 189 80% 40%; }
+.accent-focus { --primary: 255 70% 62%; --ring: 255 70% 62%; }
+.light.accent-focus { --primary: 255 65% 50%; --ring: 255 65% 50%; }
 
-.accent-magenta { --primary: 320 75% 55%; --ring: 320 75% 55%; }
-.light.accent-magenta { --primary: 320 70% 45%; --ring: 320 70% 45%; }
-
-.accent-red { --primary: 355 78% 55%; --ring: 355 78% 55%; }
-.light.accent-red { --primary: 355 72% 46%; --ring: 355 72% 46%; }
+.accent-ember { --primary: 346 62% 56%; --ring: 346 62% 56%; }
+.light.accent-ember { --primary: 346 58% 46%; --ring: 346 58% 46%; }
