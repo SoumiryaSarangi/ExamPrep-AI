@@ -68,6 +68,18 @@ export interface WeakAreaRecord {
   lastUpdated: string
 }
 
+export interface EmbeddingRecord {
+  id?: number
+  documentId: number
+  courseId: number
+  sectionIndex: number
+  chunkIndex: number
+  sectionTitle: string
+  sectionText: string
+  vector: number[]
+  createdAt: string
+}
+
 class ExamHelperDB extends Dexie {
   courses!: Table<CourseRecord, number>
   documents!: Table<DocumentRecord, number>
@@ -76,6 +88,7 @@ class ExamHelperDB extends Dexie {
   quizAttempts!: Table<QuizAttemptRecord, number>
   studySessions!: Table<StudySessionRecord, number>
   weakAreas!: Table<WeakAreaRecord, number>
+  embeddings!: Table<EmbeddingRecord, number>
 
   constructor() {
     super('ExamHelperDB')
@@ -120,6 +133,30 @@ class ExamHelperDB extends Dexie {
       studySessions: '++id, date, duration, cardsReviewed, quizzesTaken',
       weakAreas: '++id, courseId, topic, wrongCount, totalAttempts, lastUpdated, [courseId+topic]',
     })
+
+    // v5: adds embeddings for Course Tutor RAG
+    this.version(5).stores({
+      courses: '++id, courseCode, courseName, semester, createdAt',
+      documents: '++id, courseId, filename, fileType, extractedText, sections, status, uploadedAt',
+      materials: '++id, documentId, type, content, generatedAt',
+      flashcards: '++id, materialId, front, back, difficulty, nextReview, repetitions, easeFactor',
+      quizAttempts: '++id, materialId, score, answers, attemptedAt',
+      studySessions: '++id, date, duration, cardsReviewed, quizzesTaken',
+      weakAreas: '++id, courseId, topic, wrongCount, totalAttempts, lastUpdated, [courseId+topic]',
+      embeddings: '++id, documentId, courseId, sectionIndex',
+    })
+
+    // v6: finer embeddings chunking
+    this.version(6).stores({
+      courses: '++id, courseCode, courseName, semester, createdAt',
+      documents: '++id, courseId, filename, fileType, extractedText, sections, status, uploadedAt',
+      materials: '++id, documentId, type, content, generatedAt',
+      flashcards: '++id, materialId, front, back, difficulty, nextReview, repetitions, easeFactor',
+      quizAttempts: '++id, materialId, score, answers, attemptedAt',
+      studySessions: '++id, date, duration, cardsReviewed, quizzesTaken',
+      weakAreas: '++id, courseId, topic, wrongCount, totalAttempts, lastUpdated, [courseId+topic]',
+      embeddings: '++id, documentId, courseId, sectionIndex, chunkIndex',
+    }).upgrade(tx => tx.table('embeddings').clear())
   }
 }
 
