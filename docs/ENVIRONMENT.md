@@ -42,6 +42,13 @@ Task-isolated key pools prevent rate-limit cascades. Each pool rotates keys on 4
 | `NEXT_PUBLIC_GROQ_QUIZ_KEY_1` | Yes* | Primary key for quiz generation |
 | `NEXT_PUBLIC_GROQ_QUIZ_KEY_2` | No | Fallback |
 
+### Course Tutor Keys (up to 2)
+
+| Variable | Required | Description |
+|---|---|---|
+| `NEXT_PUBLIC_GROQ_TUTOR_KEY_1` | No | Primary key for tutor RAG (falls back to Notes pool) |
+| `NEXT_PUBLIC_GROQ_TUTOR_KEY_2` | No | Fallback |
+
 > *At least one key across any pool enables AI generation. Zero keys = demo mode.
 
 Get keys at [console.groq.com](https://console.groq.com) → API Keys.
@@ -68,6 +75,7 @@ Get credentials at [supabase.com](https://supabase.com) → Settings → API.
 NEXT_PUBLIC_GROQ_NOTES_KEY_1=gsk_...
 NEXT_PUBLIC_GROQ_FLASHCARD_KEY_1=gsk_...
 NEXT_PUBLIC_GROQ_QUIZ_KEY_1=gsk_...
+NEXT_PUBLIC_GROQ_TUTOR_KEY_1=gsk_...
 
 # Supabase (optional)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co

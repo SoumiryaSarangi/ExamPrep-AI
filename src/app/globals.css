@@ -96,18 +96,11 @@
     --accent-blue: 217 68% 48%;
   }
 
-  /* ── Custom Accents ── */
-  .accent-teal { --primary: 172 70% 45%; --ring: 172 70% 45%; }
-  .light.accent-teal { --primary: 172 65% 36%; --ring: 172 65% 36%; }
+}
 
-  .accent-cyan { --primary: 189 85% 50%; --ring: 189 85% 50%; }
-  .light.accent-cyan { --primary: 189 80% 40%; --ring: 189 80% 40%; }
-
-  .accent-magenta { --primary: 320 75% 55%; --ring: 320 75% 55%; }
-  .light.accent-magenta { --primary: 320 70% 45%; --ring: 320 70% 45%; }
-
-  .accent-red { --primary: 355 78% 55%; --ring: 355 78% 55%; }
-  .light.accent-red { --primary: 355 72% 46%; --ring: 355 72% 46%; }
+/* ── KaTeX Fallbacks ── */
+.katex-error {
+  color: inherit !important;
 }
 
 @layer base {
@@ -402,3 +395,18 @@
   border-color: hsl(var(--primary) / 0.3);
   box-shadow: 0 0 20px -4px hsl(var(--primary) / 0.12);
 }
+
+/* ═══════════════════════════════════════════════
+   Custom Accents (Unlayered for max specificity)
+   ═══════════════════════════════════════════════ */
+.accent-teal { --primary: 172 70% 45%; --ring: 172 70% 45%; }
+.light.accent-teal { --primary: 172 65% 36%; --ring: 172 65% 36%; }
+
+.accent-cyan { --primary: 189 85% 50%; --ring: 189 85% 50%; }
+.light.accent-cyan { --primary: 189 80% 40%; --ring: 189 80% 40%; }
+
+.accent-magenta { --primary: 320 75% 55%; --ring: 320 75% 55%; }
+.light.accent-magenta { --primary: 320 70% 45%; --ring: 320 70% 45%; }
+
+.accent-red { --primary: 355 78% 55%; --ring: 355 78% 55%; }
+.light.accent-red { --primary: 355 72% 46%; --ring: 355 72% 46%; }

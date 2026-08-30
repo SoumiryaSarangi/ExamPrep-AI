@@ -181,7 +181,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <ThemeToggle collapsed={collapsed} />
                 {!collapsed && <AccentPicker collapsed={false} />}
               </div>
-              {collapsed && <AccentPicker collapsed={true} className="hidden lg:flex" />}
               {!collapsed && (
                 <span className="text-xs text-muted-foreground ml-2 hidden lg:inline">Theme & Accent</span>
               )}

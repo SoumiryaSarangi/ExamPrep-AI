@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useMaterialStore } from '@/stores/materialStore'
 import { useAuthStore } from '@/stores/authStore'
 import { generateSectionNotes } from '@/lib/ai/aiService'
-import ReactMarkdown from 'react-markdown'
+import { MarkdownRenderer } from '@/components/MarkdownRenderer'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { SelectionMenu } from '@/components/ui/selection-menu'
@@ -601,7 +601,7 @@ export default function Notes() {
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground ml-auto" />
                 )}
               </div>
-              <ReactMarkdown>{safeMarkdown(currentMarkdown)}</ReactMarkdown>
+              <MarkdownRenderer content={safeMarkdown(currentMarkdown)} />
             </div>
           ) : (
             // Not yet generated and not currently generating — shouldn't normally show,
@@ -721,7 +721,7 @@ function LegacyNotes({
       <Card>
         <CardContent className="p-8">
           <div className="markdown-content prose prose-invert max-w-none">
-            <ReactMarkdown>{markdown}</ReactMarkdown>
+            <MarkdownRenderer content={markdown} />
           </div>
         </CardContent>
       </Card>

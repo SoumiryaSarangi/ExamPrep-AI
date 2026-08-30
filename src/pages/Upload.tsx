@@ -9,6 +9,7 @@ import { useMaterialStore } from '@/stores/materialStore'
 import { extractPdfText, extractPptxText } from '@/lib/parsers/documentParser'
 import { splitIntoSections } from '@/lib/parsers/textSplitter'
 import { generateStudyMaterials } from '@/lib/ai/aiService'
+import { indexDocument } from '@/lib/embeddings/indexer'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MagneticButton } from '@/components/ui/magnetic-button'
@@ -69,6 +70,10 @@ export default function UploadPage() {
         const sections = splitIntoSections(extractedText)
         console.log(`[Upload] Split "${file.name}" into ${sections.length} section(s)`)
         await updateDocument(docResult.document.id, { extractedText, sections: JSON.stringify(sections), status: 'extracted' })
+        
+        indexDocument(docResult.document.id, Number(selectedCourse), sections).catch(err =>
+          console.error('[Tutor] Background indexing failed:', err))
+
         await addMaterial({ documentId: docResult.document.id, type: 'notes', content: { title: `Notes: ${file.name}`, sections, generatedSections: {}, totalSections: sections.length, markdown: '' } })
         const cleanName = file.name.replace(/\.[^/.]+$/, '')
         await addMaterial({ documentId: docResult.document.id, type: 'flashcards', content: { title: `Flashcards: ${cleanName}`, cards: [] } })

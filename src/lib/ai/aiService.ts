@@ -23,6 +23,12 @@ const GROQ_QUIZ_KEYS = [
   process.env.NEXT_PUBLIC_GROQ_QUIZ_KEY_2,
 ].filter(Boolean) as string[]
 
+/** 2 Groq keys dedicated to TUTOR generation */
+const GROQ_TUTOR_KEYS = [
+  process.env.NEXT_PUBLIC_GROQ_TUTOR_KEY_1,
+  process.env.NEXT_PUBLIC_GROQ_TUTOR_KEY_2,
+].filter(Boolean) as string[]
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Boot-time diagnostics
 // ─────────────────────────────────────────────────────────────────────────────
@@ -30,6 +36,7 @@ const GROQ_QUIZ_KEYS = [
 console.log(`[AI] Notes Groq keys     : ${GROQ_NOTES_KEYS.length}`)
 console.log(`[AI] Flashcard Groq keys : ${GROQ_FLASHCARD_KEYS.length}`)
 console.log(`[AI] Quiz Groq keys      : ${GROQ_QUIZ_KEYS.length}`)
+console.log(`[AI] Tutor Groq keys     : ${GROQ_TUTOR_KEYS.length}`)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // tryWithFallback — rotates through keys on 429 rate-limit errors
@@ -419,6 +426,58 @@ export async function generateWeakAreaQuiz(text: string, filename: string, weakT
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// generateTutorAnswer (Course Tutor RAG)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function generateTutorAnswer(
+  question: string,
+  chunks: Array<{ sectionTitle: string; sectionText: string; filename: string }>,
+  history: Array<{ role: 'user' | 'assistant'; content: string }> = []
+): Promise<string> {
+  // Budget ~12,000 characters total (~3000 tokens) to stay within 8k TPM limits.
+  // Distribute this budget evenly across all retrieved chunks so none are dropped.
+  const charsPerChunk = Math.floor(12000 / Math.max(chunks.length, 1))
+  const contextText = chunks.map((c, i) => {
+    const text = c.sectionText.length > charsPerChunk ? c.sectionText.slice(0, charsPerChunk) + '... (truncated)' : c.sectionText
+    return `--- Excerpt ${i + 1} (From ${c.filename}, ${c.sectionTitle}) ---\n${text}`
+  }).join('\n\n')
+
+  let historyText = ''
+  if (history.length > 0) {
+    historyText = "Recent Conversation History:\n" + history.map(m => {
+      const roleName = m.role === 'user' ? 'Student' : 'Tutor'
+      // Truncate to ~300 chars
+      const truncated = m.content.length > 300 ? m.content.slice(0, 300) + '...' : m.content
+      return `${roleName}: ${truncated}`
+    }).join('\n') + '\n\n'
+  }
+
+  const prompt = `You are an expert, helpful tutor for a course. Answer the student's question based ONLY on the provided excerpts from their uploaded course materials.
+
+${historyText}Excerpts:
+${contextText}
+
+Question: ${question}
+
+Instructions:
+1. Answer the question using ONLY the facts found in the excerpts.
+2. If the excerpts contain the answer, provide a clear and helpful explanation. Use formatting (bullet points, bold text) if it makes the answer easier to read.
+3. If the answer cannot be found in the provided excerpts, YOU MUST plainy state that the information is not covered in the student's uploaded materials for this course, rather than guessing or hallucinating an answer. Do NOT provide an answer from your general knowledge.
+4. Use the conversation history ONLY to understand what the student's current question is referring to (pronouns, 'what about X', 'more detail', follow-ups on your own previous answer). Every factual claim in your answer must still come only from the excerpts provided below for THIS turn — if those excerpts don't cover the specific thing being asked about, say so honestly, even if it was mentioned earlier in the conversation.
+
+Answer:`
+
+  const keysToUse = GROQ_TUTOR_KEYS.length > 0 ? GROQ_TUTOR_KEYS : GROQ_NOTES_KEYS
+  
+  if (keysToUse.length > 0) {
+    return groqGenerate(prompt, keysToUse, 'tutor')
+  }
+  
+  console.warn('[AI] No Groq keys for tutor or notes. Using demo mode.')
+  return "This is a demo answer. The real answer is not available because no Groq API keys are configured."
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Demo content helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -552,6 +611,7 @@ export function getAIStatus() {
     notesKeys:     GROQ_NOTES_KEYS.length,
     flashcardKeys: GROQ_FLASHCARD_KEYS.length,
     quizKeys:      GROQ_QUIZ_KEYS.length,
+    tutorKeys:     GROQ_TUTOR_KEYS.length,
     configured:    isAIConfigured(),
   }
 }

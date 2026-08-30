@@ -372,14 +372,22 @@ export default function CourseDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 animate-fade-in">
-        <Button variant="ghost" size="icon" onClick={() => router.push('/app/courses')} className="rounded-xl">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">{currentCourse.courseCode}</h1>
-          <p className="text-muted-foreground">{currentCourse.courseName}</p>
+      <div className="flex items-center justify-between gap-4 animate-fade-in">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.push('/app/courses')} className="rounded-xl">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">{currentCourse.courseCode}</h1>
+            <p className="text-muted-foreground">{currentCourse.courseName}</p>
+          </div>
         </div>
+        <Button asChild>
+          <Link href={`/app/courses/${courseId}/tutor`} className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            Ask Course Tutor
+          </Link>
+        </Button>
       </div>
 
       {/* ── Stats Row ── */}
